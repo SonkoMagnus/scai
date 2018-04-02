@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 import bwapi.DefaultBWListener;
 import bwapi.Game;
@@ -15,10 +16,15 @@ import bwapi.Unit;
 import bwapi.UnitCommandType;
 import bwapi.UnitType;
 import bwta.BWTA;
+import scai.elte.command.BunkerManager;
+import scai.elte.command.MarineManager;
+import scai.elte.command.Request;
+import scai.elte.command.UnitManager;
 import scai.elte.strategy.BioSquads;
 import scai.elte.strategy.BuildOrder;
 import scai.elte.strategy.BuildOrderItem;
 import scai.elte.strategy.BuildOrderItemStatus;
+import sun.text.normalizer.UTF16;
 
 public class Main extends DefaultBWListener {
 	
@@ -40,7 +46,7 @@ public class Main extends DefaultBWListener {
      * The amount of minerals currently reserved for buildings.
      */
     public int reservedMinerals;
-
+    public int reservedMineralsInQueue;
     /**
      * The amount of gas currently reserved for buildings.
      */
@@ -85,9 +91,9 @@ public class Main extends DefaultBWListener {
      */
     public BuildOrder buildOrder = new BuildOrder();
     
+    public HashMap<Integer, UnitManager> unitManagers = new HashMap<Integer, UnitManager>();
     
     Random rand;
-    
     
     public ArrayList<Unit> gatherers = new ArrayList<Unit>(); //Default activity
     public ArrayList<Unit> builders  = new ArrayList<Unit>();
@@ -95,22 +101,38 @@ public class Main extends DefaultBWListener {
     public int supplyUsedActual;
     //public int supplyTotal - do i need this?
     
+    Set<TilePosition> plannedPositions = new HashSet<TilePosition>();
+    public static HashMap<String, Request> requests = new HashMap<String, Request>();
+    
+    
     @Override
     public void onUnitCreate(Unit unit) {
       //  System.out.println("New unit discovered " + unit.getType());
-        countAllUnits();
-        //Update queue when buildings
-    	if (frameCount > 10) {
-        for (BuildOrderItem boi : buildOrder.buildOrderList) {
-        	if (boi.status == BuildOrderItemStatus.IN_QUEUE) {
-        		if (unit.getType() == boi.getUnitType()) {
-        			boi.status = BuildOrderItemStatus.UNDER_CONSTRUCTION;
-        			System.out.println("Changing "+ boi + " to UNDER_CONSTRUCTION" );
-        			reservedMinerals = reservedMinerals - boi.getUnitType().mineralPrice();
-        		}
+        if (unit.getType() != UnitType.Resource_Mineral_Field && unit.getType() != UnitType.Resource_Vespene_Geyser && unit.getType() != UnitType.Unknown) {
+        	if (unit.getType() == UnitType.Terran_Bunker) {
+        		unitManagers.put(unit.getID(), new BunkerManager(unit));
+        	} else if (unit.getType() == UnitType.Terran_Marine) {
+        		unitManagers.put(unit.getID(), new MarineManager(unit));
+        	} else {
+        		unitManagers.put(unit.getID(), new UnitManager(unit));
         	}
         }
-    	}
+        countAllUnits();
+        //Update queue when buildings are in progress
+    //	if (frameCount > 10) {
+
+        for (BuildOrderItem boi : buildOrder.buildOrderList) {
+        	if (boi.status == BuildOrderItemStatus.BUILD_PROCESS_STARTED) {
+        		if (unit.getType() == boi.getUnitType()) {
+        			boi.status = BuildOrderItemStatus.UNDER_CONSTRUCTION;
+//        			if (DEBUGMODE)	System.out.println("Changing "+ boi.getUnitType() + " to UNDER_CONSTRUCTION" );
+        			reservedMinerals = reservedMinerals - boi.getUnitType().mineralPrice();
+                	break;
+        		}
+        	}
+
+        }
+    //	}
     }
     
     
@@ -161,26 +183,45 @@ public class Main extends DefaultBWListener {
     	else
     		return result;
     }
-
+    
+    @Override
+    public void onUnitMorph(Unit unit) {
+    	super.onUnitMorph(unit);
+        for (BuildOrderItem boi : buildOrder.buildOrderList) {
+        	if (boi.status == BuildOrderItemStatus.BUILD_PROCESS_STARTED) {
+        		if (unit.getType() == boi.getUnitType()) {
+        			boi.status = BuildOrderItemStatus.UNDER_CONSTRUCTION;
+//        if (DEBUGMODE)	System.out.println("Changing "+ boi.getUnitType() + " to UNDER_CONSTRUCTION" );
+        			reservedMineralsInQueue = reservedMineralsInQueue - boi.getUnitType().mineralPrice();
+        			reservedMinerals = reservedMinerals - boi.getUnitType().mineralPrice();
+        		}
+        	}
+        }
+    	
+    }
 
     @Override
     public void onStart() {
     	try {
-    	
+   
     	rand = new Random();
-    	System.out.println("START");
+//    	System.out.println("START");
         game = mirror.getGame();
         self = game.self();
         buildOrder = new BioSquads();
- 
+     	game.setLocalSpeed(10);
         //Use BWTA to analyze map
         //This may take a few minutes if the map is processed first time!
-        System.out.println("Analyzing map...");
+        //System.out.println("Analyzing map...");
 
         BWTA.analyze();
-        System.out.println("Map data ready");
+        //System.out.println("Map data ready");
+        /*
+        for (Unit u : self.getUnits()) {
+        	unitManagers.put(u.getID(), new UnitManager(u));
+        }
+        */
         
-        int i = 0;
    //     for(BaseLocation baseLocation : BWTA.getBaseLocations()){
      //   	System.out.println("Base location #" + (++i) + ". Printing location's region polygon:");
   //      	for(Position position : baseLocation.getRegion().getPolygon().getPoints()){
@@ -197,7 +238,9 @@ public class Main extends DefaultBWListener {
 
     @Override
     public void onUnitDestroy(Unit unit) {
-
+//    	System.out.println(unit.getType() + " ID: " + unit.getID() + " MINE? " + unitManagers.get(unit.getID()));
+    	
+    	unitManagers.remove(unit.getID(), new UnitManager(unit));
     //	super.onUnitDestroy(arg0);
     }
     
@@ -205,8 +248,17 @@ public class Main extends DefaultBWListener {
     public void onUnitComplete(Unit unit) {
     	if (frameCount > 10) {
     		countAllUnits();
-    		
     	}
+    	
+        for (BuildOrderItem boi : buildOrder.buildOrderList) {
+        	if (boi.status == BuildOrderItemStatus.UNDER_CONSTRUCTION) {
+        		if (unit.getType() == boi.getUnitType()) {
+        			boi.status = BuildOrderItemStatus.DONE;
+//        if (DEBUGMODE)	System.out.println("Changing "+ boi.getUnitType() + " to DONE" );
+        		}
+        	}
+        }
+    	
     }
     
     public void assignWorker(Unit unit, ArrayList<Unit> group) {
@@ -228,6 +280,12 @@ public class Main extends DefaultBWListener {
     	}
     }
 
+    public void trainUnit(Unit producer, UnitType unitType) {
+    	if (producer.getTrainingQueue().size() < 1) {
+    		producer.train(unitType);
+    	}
+    	
+    }
     
 
     
@@ -242,10 +300,14 @@ public class Main extends DefaultBWListener {
         StringBuilder statusMessages = new StringBuilder();
         Integer availableMinerals = self.minerals() - reservedMinerals;
         statusMessages.append("Available minerals:" + availableMinerals.toString() + "\n");
-        statusMessages.append("Reserved minerals:" + reservedMinerals+ "\n");
+     //   statusMessages.append("Reserved minerals:" + reservedMinerals+ "\n");
+    //    statusMessages.append("Reserved in queue:" + reservedMineralsInQueue + "\n");
     //    statusMessages.append("Current worker count:" + workerCount.toString() + "\n");
     //    statusMessages.append("Target worker count:" + targetWorkers.toString() + "\n");
         statusMessages.append("Frame count:" + frameCount + "\n");
+        statusMessages.append("Units:" + self.getUnits().size() + " Managers:" + unitManagers.size() + "\n");
+        statusMessages.append("Requests:" + requests.size());
+        
 
 
 	   	int workersInProduction = 0;
@@ -253,10 +315,8 @@ public class Main extends DefaultBWListener {
     		workersInProduction = unitsInProduction.get(UnitType.Terran_SCV);
     	}
     	
-    	if (frameCount > 10 && workerCount > 1) {
-    		
-
-				for (BuildOrderItem boi : buildOrder.buildOrderList) {
+    	if (frameCount > 10 && workerCount > 1) {	
+    			for (BuildOrderItem boi : buildOrder.buildOrderList) {
 					if (boi.getSupplyThreshold() <= supplyUsedActual && boi.status == BuildOrderItemStatus.PLANNED) {
 						// Reserve minerals
 						reservedMinerals = reservedMinerals + boi.getUnitType().mineralPrice();
@@ -264,48 +324,63 @@ public class Main extends DefaultBWListener {
 						System.out.println(	"Reserving" + boi.getUnitType().mineralPrice() + " minerals for:" + boi.getUnitType());
 					}
 					//Periodically check for false positives - this can occur after failed builds
+					/*
 					if (frameCount % 250 == 0 && boi.status == BuildOrderItemStatus.IN_QUEUE && boi.gotBuilder) {
 						boi.gotBuilder = false;
 					}
+					*/
 
-					if (boi.status == BuildOrderItemStatus.IN_QUEUE	&& self.minerals() >= boi.getUnitType().mineralPrice() && game.canMake(boi.getUnitType()) ) {
-					
+					if (boi.status == BuildOrderItemStatus.IN_QUEUE	&& (self.minerals()-reservedMineralsInQueue) >= boi.getUnitType().mineralPrice() &&	game.canMake(boi.getUnitType())) {
+						
+
 						if (!boi.gotBuilder) {
 							Unit builder = null;
-
-							//System.out.println("_______");
-							//System.out.println("Builder_size:" + builders.size());
-							for (Unit b : builders) {
-								System.out.println("Builder_id:" + b.getID() + " Last command:" + b.getLastCommand().getUnitCommandType());
-								
-								if (!b.isConstructing()	|| b.getLastCommand().getUnitCommandType() != UnitCommandType.Build) {
-									
+							for (Unit b : builders) {								
+								if (!b.isConstructing() && !b.getLastCommand().getUnitCommandType().equals(UnitCommandType.Build) ) {	
 									builder = b;
 									boi.gotBuilder = true;
 									break;
 								}
 							}
-							//System.out.println("_______");
 							
 							if (!boi.gotBuilder) {
 								Unit mb = gatherers.get(rand.nextInt(gatherers.size()));
 								assignWorker(mb, builders);
+							} 
+							
+							
+							if (boi.getTilePosition() == null)
+							{
+
+								TilePosition buildTile = null;
+								if (builder !=null ) {
+								// get a nice place to build
+								buildTile = getBuildTile(builder, boi.getUnitType(),
+										self.getStartLocation());
+								}
+	
+								boi.setTilePosition(buildTile);
 							}
 							
-							if (builder !=null ) {
-							// get a nice place to build
-							TilePosition buildTile = getBuildTile(builder, boi.getUnitType(),
-									self.getStartLocation());
-
-							if (buildTile != null) {
-								builder.build(boi.getUnitType(), buildTile);
-								System.out.println("Builder id:" + builder.getID()
+							
+							if (boi.getTilePosition() != null && boi.gotBuilder) {
+								builder.build(boi.getUnitType(), boi.getTilePosition());
+								System.out.println("--------------------------------------------Builder id:" + builder.getID()
 								+  " command is to build " + boi.getUnitType()
-								+ "in "+ buildTile.getX() + " " + buildTile.getY()
+								+ "in "+ boi.getTilePosition().getX() + " " + boi.getTilePosition().getY()
 								);
 								boi.gotBuilder = true;
+								
+
+								System.out.print("DEBUG:(build loop) changing reserved minerals from" + reservedMineralsInQueue + " to ");
+								reservedMineralsInQueue += boi.getUnitType().mineralPrice();
+			        			System.out.println(reservedMineralsInQueue);
+			        			boi.status=BuildOrderItemStatus.BUILD_PROCESS_STARTED;
+			        			break;
+
+							
 							}
-							}
+							
 					}
 					}
 				}
@@ -313,7 +388,10 @@ public class Main extends DefaultBWListener {
     	
     	
     	
-      	
+      	//The UnitManager loop will eventually replace the myUnit loop
+    	for (Integer i :unitManagers.keySet()) {
+    		unitManagers.get(i).operate();
+    	}
       	
       	
       	
@@ -331,24 +409,12 @@ public class Main extends DefaultBWListener {
         	
             //if there's enough minerals, train an SCV
             if (myUnit.getType() == UnitType.Terran_Command_Center && availableMinerals >= 50 && b < targetWorkers) {
-            	/*
-            	 System.out.println("DEBUG_w:" + workers);
-            	 System.out.println("DEBUG_wp:" + workersInProduction);
-            	 System.out.println("DEBUG_f:" + (workers+workersInProduction));
-                */
-                myUnit.train(UnitType.Terran_SCV);
-                //System.out.println(myUnit.getTrainingQueue());
-                
+            	trainUnit(myUnit, UnitType.Terran_SCV);
+//                myUnit.train(UnitType.Terran_SCV);   
             }
             
             if (myUnit.getType() == UnitType.Terran_Barracks && availableMinerals >=50) {
-            	myUnit.train(UnitType.Terran_Marine);
-            }
-      //      myUnit.getTrainingQueue()
-            if (myUnit.getType() == UnitType.Terran_Bunker) {
-            	//myUnit.isLoaded()
-            	
-            	//myUnit.load(target)
+            	trainUnit(myUnit, UnitType.Terran_Marine);
             }
             
             //if it's a worker and it's idle, send it to the closest mineral patch
@@ -374,38 +440,9 @@ public class Main extends DefaultBWListener {
             }
             
             
-            /*
-            if (workers >= targetWorkers && (self.minerals() >= 100)) {
-            	//iterate over units to find a worker
-            	for (Unit unit : self.getUnits()) {
-            		if (unit.getType() == UnitType.Terran_SCV) {
-            			//get a nice place to build a supply depot
-            			TilePosition buildTile =
-            				getBuildTile(unit, UnitType.Terran_Supply_Depot, self.getStartLocation());
-            			//and, if found, send the worker to build it (and leave others alone - break;)
-            			if (buildTile != null) {
-            				unit.build(UnitType.Terran_Supply_Depot, buildTile);
-            				break;
-            			}
-            		}
-            	}
-            }
-                        */
-            /*
-            if (myUnit.getType().isWorker()) {
-            	myUnit.build(arg0, arg1)
-            }
-            */
+
         }
-        /*
-        for (UnitType m : unitsInProduction.keySet()) {
-        	//System.out.println("Prod:");
-        	//System.out.print(m + " ");
-        }
-        */
-      //  System.out.println(availableMinerals);
-        //draw my units on screen
-       // System.out.println(unitsInProduction);
+        
         game.drawTextScreen(10, 25, statusMessages.toString());
         //game.drawTextScreen(10, 25, availableMinerals.toString());
     	} catch (Exception e) {
@@ -433,11 +470,19 @@ public class Main extends DefaultBWListener {
     					) return n.getTilePosition();
     		}
     	}
+    	
+    
 
     	while ((maxDist < stopDist) && (ret == null)) {
+
     		for (int i=aroundTile.getX()-maxDist; i<=aroundTile.getX()+maxDist; i++) {
     			for (int j=aroundTile.getY()-maxDist; j<=aroundTile.getY()+maxDist; j++) {
-    				if (game.canBuildHere(new TilePosition(i,j), buildingType, builder, false)) {
+    				TilePosition targetTile = new TilePosition(i,j);
+    		
+    			//	System.out.println("DEBUG containstile_outer: +" + plannedPositions.contains(targetTile));
+    				
+    				if (game.canBuildHere(new TilePosition(i,j), buildingType, builder, false) && !plannedPositions.contains(targetTile)) {
+        		//		System.out.println("DEBUG containstile_inner: +" + plannedPositions.contains(targetTile));
     					// units that are blocking the tile
     					boolean unitsInWay = false;
     					for (Unit u : game.getAllUnits()) {
@@ -445,7 +490,20 @@ public class Main extends DefaultBWListener {
     						if ((Math.abs(u.getTilePosition().getX()-i) < 4) && (Math.abs(u.getTilePosition().getY()-j) < 4)) unitsInWay = true;
     					}
     					if (!unitsInWay) {
-    						return new TilePosition(i, j);
+    						ret = new TilePosition(i, j);
+    						
+  //  						System.out.println("Adding planned position:" + ret); 
+    						//System.out.println("DEBUG typedim:" + buildingType +  " DOWN:" + buildingType.dimensionDown() + " LEFT:" + buildingType.dimensionLeft() + " RIght" + buildingType.dimensionRight() + " UP"  + buildingType.dimensionUp());
+//    						System.out.println("DEBUG tilesize:" + buildingType.tileSize() + " H:" + buildingType.tileHeight() + " W:" + buildingType.tileWidth());
+    						
+    					    for (int th=0; th<buildingType.tileHeight();th++) {
+        					    for (int tw=0; tw<buildingType.tileWidth();tw++) {    	
+        					    	TilePosition occupied = new TilePosition(i+tw, j+th);
+        					    	if (!plannedPositions.contains(occupied)) plannedPositions.add(occupied);
+        					    }
+    					    }
+    						
+    						return ret;
     					}
     					// creep for Zerg
     					if (buildingType.requiresCreep()) {

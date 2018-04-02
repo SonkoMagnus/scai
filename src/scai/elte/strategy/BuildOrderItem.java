@@ -1,11 +1,18 @@
 package scai.elte.strategy;
 
+import java.util.UUID;
+
+import bwapi.TilePosition;
 import bwapi.UnitType;
 
 public class BuildOrderItem {
 	
+	private UUID id;
+
 	private UnitType unitType;
 	private Integer supplyThreshold;
+	
+	private TilePosition tilePosition;
 
 	public BuildOrderItemStatus status;
 	public boolean gotBuilder = false;
@@ -27,6 +34,7 @@ public class BuildOrderItem {
 		this.supplyThreshold=supplyThreshold;
 		this.importance=importance;
 		this.status=status;
+		this.id=UUID.randomUUID();
 	}
 
 	public UnitType getUnitType() {
@@ -52,5 +60,16 @@ public class BuildOrderItem {
 	public void setImportance(Integer importance) {
 		this.importance = importance;
 	}
+
+	public TilePosition getTilePosition() {
+		return tilePosition;
+	}
+
+	public void setTilePosition(TilePosition tilePosition) {
+		this.tilePosition = tilePosition;
+	}
+	
+
+
 
 }
