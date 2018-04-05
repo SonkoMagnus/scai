@@ -124,9 +124,6 @@ public class Main extends DefaultBWListener {
         }
 
         countAllUnits();
-        //Update queue when buildings are in progress
-    //	if (frameCount > 10) {
-
         for (BuildOrderItem boi : buildOrder.buildOrderList) {
         	if (boi.status == BuildOrderItemStatus.BUILD_PROCESS_STARTED) {
         		if (unit.getType() == boi.getUnitType()) {
@@ -138,7 +135,6 @@ public class Main extends DefaultBWListener {
         	}
 
         }
-    //	}
     }
     
     
@@ -223,6 +219,10 @@ public class Main extends DefaultBWListener {
      			assignWorker(unit, mineralWorkers);
      		}
      	}
+     	
+     	for (Unit u :game.getAllUnits()) {
+     		System.out.println(u.getType());
+     	}
 
         //Use BWTA to analyze map
         //This may take a few minutes if the map is processed first time!
@@ -278,6 +278,9 @@ public class Main extends DefaultBWListener {
         	requests.put(unit.getID() + "_2", new Request(unit, new Command(CommandType.GAS_WORKER)));
         }
     	
+    
+
+   
     }
     //TODO rework generic
     public void assignWorker(Unit unit, ArrayList<Unit> group) {
@@ -318,6 +321,12 @@ public class Main extends DefaultBWListener {
     		producer.train(unitType);
     	}
     	
+    }
+    
+    @Override
+    public void onUnitDiscover(Unit unit) {
+    	//if unit.getPlayer() //ENemy unit management
+    	System.out.println("OMG IT'S A "+ unit.getType() );
     }
     
 
@@ -379,22 +388,18 @@ public class Main extends DefaultBWListener {
 							if (!boi.gotBuilder) {
 								Unit mb = mineralWorkers.get(rand.nextInt(mineralWorkers.size()));
 								assignWorker(mb, builders);
-							} 
-							
+							} 							
 							
 							if (boi.getTilePosition() == null)
 							{
-
 								TilePosition buildTile = null;
 								if (builder !=null ) {
 								// get a nice place to build
 								buildTile = getBuildTile(builder, boi.getUnitType(),
 										self.getStartLocation());
 								}
-	
 								boi.setTilePosition(buildTile);
 							}
-							
 							
 							if (boi.getTilePosition() != null && boi.gotBuilder) {
 								builder.build(boi.getUnitType(), boi.getTilePosition());
@@ -403,24 +408,17 @@ public class Main extends DefaultBWListener {
 								+ "in "+ boi.getTilePosition().getX() + " " + boi.getTilePosition().getY()
 								);
 								boi.gotBuilder = true;
-								
-
-								System.out.print("DEBUG:(build loop) changing reserved minerals from" + reservedMineralsInQueue + " to ");
+								//System.out.print("DEBUG:(build loop) changing reserved minerals from" + reservedMineralsInQueue + " to ");
 								reservedMineralsInQueue += boi.getUnitType().mineralPrice();
-			        			System.out.println(reservedMineralsInQueue);
+			        			//System.out.println(reservedMineralsInQueue);
 			        			boi.status=BuildOrderItemStatus.BUILD_PROCESS_STARTED;
-			        			break;
-
-							
+			        			break;					
 							}
 							
 					}
 					}
 				}
 			}
-    	
-    	
-    	
       	//The UnitManager loop will eventually replace the myUnit loop
     	for (Integer i :unitManagers.keySet()) {
     		unitManagers.get(i).operate();
@@ -474,32 +472,22 @@ public class Main extends DefaultBWListener {
         	//game.drawTextMap(myUnit.getPosition().getX(), myUnit.getPosition().getY(), myUnit.getOrder().toString());
         	game.drawLineMap(myUnit.getPosition().getX(), myUnit.getPosition().getY(), myUnit.getOrderTargetPosition().getX(), 
         			 myUnit.getOrderTargetPosition().getY(), bwapi.Color.Black);
-        	
-        
-        	
         	int b = workerCount + workersInProduction;
-            
-        	
             //if there's enough minerals, train an SCV
             if (myUnit.getType() == UnitType.Terran_Command_Center && availableMinerals >= 50 && b < targetWorkers) {
-            	trainUnit(myUnit, UnitType.Terran_SCV);
-//                myUnit.train(UnitType.Terran_SCV);   
+            	trainUnit(myUnit, UnitType.Terran_SCV); 
             }
             
             if (myUnit.getType() == UnitType.Terran_Barracks && availableMinerals >=50) {
             	trainUnit(myUnit, UnitType.Terran_Marine);
             }
-            
-				if (myUnit.getType().isWorker() && myUnit.isCompleted()) {
-					if (myUnit.isIdle()) {
-						assignWorker(myUnit, mineralWorkers);						
-					} 
-				}
-
+			if (myUnit.getType().isWorker() && myUnit.isCompleted()) {
+				if (myUnit.isIdle()) {
+					assignWorker(myUnit, mineralWorkers);						
+				} 
+			}
 
         }
-        
-        
         for (Request r : requests.values()) {
         	if (r.getRequestStatus() == RequestStatus.FULFILLED) {
         		requests.remove(r);
@@ -597,9 +585,7 @@ public class Main extends DefaultBWListener {
     		}
     		maxDist += 2;
     	}
-
     	if (ret == null) game.printf("Unable to find suitable build position for "+buildingType.toString());
     	return ret;
     }
-    
 }	
