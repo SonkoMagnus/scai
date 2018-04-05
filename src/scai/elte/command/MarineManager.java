@@ -11,12 +11,8 @@ public class MarineManager extends UnitManager {
 
 	@Override
 	public void operate() {
-
-		
 		if ( getUnit().isCompleted() && !this.isGotTask()) {
-			System.out.println("mmmmmmmmm");
 			for (Request r : Main.requests.values()) {
-				System.out.println("BLEP");
 				if (getUnit().getTransport() == null) { //Workaround, as unit.isLoaded doesn't seem to work
 					if (r.getRequestedCommand().getType() == CommandType.MAN_BUNKER && r.getRequestStatus() == RequestStatus.NEW
 						&& r.getAnsweringUnit() == null) {
