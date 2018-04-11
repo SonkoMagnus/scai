@@ -9,13 +9,12 @@ public class Request {
 	private RequestStatus requestStatus;
 	private Unit answeringUnit;
 
-	
+
 	public Request(Unit unit, Command command) {
 		this.requestingUnit=unit;
 		this.requestedCommand=command;
 		this.setRequestStatus(RequestStatus.NEW);
 	}
-	
 	
 	public Unit getRequestingUnit() {
 		return requestingUnit;
