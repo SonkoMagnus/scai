@@ -36,6 +36,15 @@ public class BuildOrderItem {
 		this.status=status;
 		this.id=UUID.randomUUID();
 	}
+	
+	public BuildOrderItem(UnitType unitType,  Integer supplyThreshold,Integer importance, BuildOrderItemStatus status, TilePosition position) {
+		this.unitType=unitType;
+		this.supplyThreshold=supplyThreshold;
+		this.importance=importance;
+		this.status=status;
+		this.tilePosition=position;
+		this.id=UUID.randomUUID();
+	}
 
 	public UnitType getUnitType() {
 		return unitType;

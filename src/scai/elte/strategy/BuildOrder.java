@@ -2,6 +2,7 @@ package scai.elte.strategy;
 
 import java.util.ArrayList;
 
+import bwapi.TilePosition;
 import bwapi.UnitType;
 
 public class BuildOrder {
@@ -21,8 +22,10 @@ public class BuildOrder {
 		buildOrderList.add(new BuildOrderItem(ut, supply, importance, BuildOrderItemStatus.PLANNED));
 	}
 	
-	public void addItem(UnitType ut, Integer supply, Integer importance, BuildOrderItemStatus status) {
-		buildOrderList.add(new BuildOrderItem(ut, supply, importance, status));
+	
+	public void addItem(UnitType ut, Integer supply, Integer importance, TilePosition position) {
+		buildOrderList.add(new BuildOrderItem(ut, supply, importance, BuildOrderItemStatus.PLANNED, position));
 	}
+	
 
 }
