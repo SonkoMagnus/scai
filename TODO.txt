@@ -1,6 +1,9 @@
 - Improve build algorithm...
-- Terrain analyze, identify chokes, gating...
+- Terrain analyze, identify chokes, gating... walling
+	- Naturalchoke identify
 - Unit manager for refinery? 
+- Management of addons and upgrades
+- MILITIA: When SCV attacked, respond
 
 
 

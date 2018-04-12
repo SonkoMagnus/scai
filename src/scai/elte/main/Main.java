@@ -33,10 +33,11 @@ import scai.elte.command.Request;
 import scai.elte.command.Request.RequestType;
 import scai.elte.command.RequestStatus;
 import scai.elte.command.UnitManager;
-import scai.elte.strategy.BioSquads;
 import scai.elte.strategy.BuildOrder;
 import scai.elte.strategy.BuildOrderItem;
 import scai.elte.strategy.BuildOrderItemStatus;
+import scai.elte.strategy.plan.BioSquads;
+import scai.elte.strategy.plan.TwoRaxFE;
 
 public class Main extends DefaultBWListener {
 	
@@ -101,7 +102,7 @@ public class Main extends DefaultBWListener {
     /**
      * Build order, only buildings
      */
-    public BuildOrder buildOrder = new BuildOrder();
+    public static BuildOrder buildOrder = new BuildOrder();
     
     public static HashMap<Integer, UnitManager> unitManagers = new HashMap<Integer, UnitManager>();
     
@@ -112,9 +113,11 @@ public class Main extends DefaultBWListener {
     public ArrayList<Unit> gasWorkers = new ArrayList<Unit>();
     public ArrayList<Unit> builders  = new ArrayList<Unit>();
     public ArrayList<Unit> militia = new ArrayList<Unit>(); //SCVs fighting
+    public ArrayList<Unit> scouts = new ArrayList<Unit>();	
     public ArrayList<ArrayList<Unit>> workerGroups = new ArrayList<ArrayList<Unit>>(); 
     
-    public int supplyUsedActual;
+    public static int supplyUsedActual;
+    public static Integer availableMinerals;
     //public int supplyTotal - do i need this?
     
     Set<TilePosition> plannedPositions = new HashSet<TilePosition>();
@@ -123,11 +126,11 @@ public class Main extends DefaultBWListener {
     public static ArrayList<Unit> enemyUnits = new ArrayList<Unit>();
     public static Set<BaseLocation> baseLocations = new HashSet<BaseLocation>();
     public static Set<Region> baseRegions = new HashSet<Region>();
+    
     BaseLocation home;
     BaseLocation naturalExpansion;
     ArrayList<Chokepoint> chokes; 
     MapUtil mapUtil;
-    
     
     
     @Override
@@ -257,6 +260,8 @@ public class Main extends DefaultBWListener {
         workerGroups.add(gasWorkers);
         workerGroups.add(builders);
         workerGroups.add(militia);
+        workerGroups.add(scouts);
+        
   
         
         //System.out.println(self.getStartLocation());
@@ -281,7 +286,8 @@ public class Main extends DefaultBWListener {
         		naturalExpansion = bl;
         	}
         }  
-        buildOrder = new BioSquads(naturalExpansion.getTilePosition());
+ 
+        buildOrder = new TwoRaxFE(naturalExpansion.getTilePosition());
     	}
     	catch (Exception ex) {
     		ex.printStackTrace();
@@ -408,7 +414,7 @@ public class Main extends DefaultBWListener {
 
         //Debug / Info
         StringBuilder statusMessages = new StringBuilder();
-        Integer availableMinerals = self.minerals() - reservedMinerals;
+        availableMinerals = self.minerals() - reservedMinerals;
         statusMessages.append("Available minerals:" + availableMinerals.toString() + "\n");
         statusMessages.append("Frame count:" + frameCount + "\n");
         statusMessages.append("Units:" + self.getUnits().size() + " Managers:" + unitManagers.size() + "\n");

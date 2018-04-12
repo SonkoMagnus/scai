@@ -6,6 +6,7 @@ import bwapi.Position;
 import bwapi.TilePosition;
 import bwapi.Unit;
 import bwapi.UnitCommandType;
+import scai.elte.command.Request.RequestType;
 import scai.elte.main.Main;
 
 public class MarineManager extends UnitManager {
@@ -27,6 +28,7 @@ public class MarineManager extends UnitManager {
 		if (!this.isGotTask()) {
 			
 			for (Request r : Main.requests.values()) {
+				if (r.getType() == RequestType.COMMAND) { 
 				if (getUnit().getTransport() == null) { //Workaround, as unit.isLoaded doesn't seem to work
 					if (r.getRequestedCommand().getType() == CommandType.MAN_BUNKER && r.getRequestStatus() == RequestStatus.NEW
 						&& r.getAnsweringUnit() == null) {
@@ -47,6 +49,7 @@ public class MarineManager extends UnitManager {
 						//System.out.println("ID:" + getUnit().getID()+ " IS_LOADED:" + getUnit().isLoaded());
 						r.getRequestingUnit().load(getUnit());
 					}
+				}
 				}
 			}		
 		}

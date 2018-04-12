@@ -1,7 +1,8 @@
-package scai.elte.strategy;
+package scai.elte.strategy.plan;
 
 import bwapi.TilePosition;
 import bwapi.UnitType;
+import scai.elte.strategy.BuildOrder;
 
 
 //Basically 2 rax FE, then marine+medic spam
