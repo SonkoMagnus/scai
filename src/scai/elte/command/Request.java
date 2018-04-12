@@ -8,12 +8,25 @@ public class Request {
 	private Command requestedCommand;
 	private RequestStatus requestStatus;
 	private Unit answeringUnit;
+	private RequestType type;
 
-
+	//COMMAND: Specific command, DEFEND: "defend me"
+	public enum RequestType {
+		COMMAND, DEFEND
+	}
+	
 	public Request(Unit unit, Command command) {
 		this.requestingUnit=unit;
 		this.requestedCommand=command;
 		this.setRequestStatus(RequestStatus.NEW);
+		this.setType(RequestType.COMMAND);
+	}
+	
+	public Request(Unit unit, Command command, RequestType type) {
+		this.requestingUnit=unit;
+		this.requestedCommand=command;
+		this.setRequestStatus(RequestStatus.NEW);
+		this.setType(type);
 	}
 	
 	public Unit getRequestingUnit() {
@@ -47,6 +60,14 @@ public class Request {
 
 	public void setAnsweringUnit(Unit answeringUnit) {
 		this.answeringUnit = answeringUnit;
+	}
+
+	public RequestType getType() {
+		return type;
+	}
+
+	public void setType(RequestType type) {
+		this.type = type;
 	}	
 	
 }

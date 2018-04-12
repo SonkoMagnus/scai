@@ -3,7 +3,7 @@ package scai.elte.command;
 import bwapi.Unit;
 import scai.elte.main.Main;
 
-public class BunkerManager extends UnitManager {
+public class BunkerManager extends BuildingManager {
 
 	public BunkerManager(Unit unit) {
 		super(unit);
@@ -13,6 +13,10 @@ public class BunkerManager extends UnitManager {
 	public void operate () {
 	if(getUnit().isCompleted()) {
 		if (getUnit().getLoadedUnits().size() <4) {
+			if (getUnit().getLoadedUnits().size() == 0) {
+				requestDefenseIfNeeded();
+			}
+			
 			//System.out.println("OPERATIN BUNKER...");
 			//Issue a bunker manning request
 		

@@ -1,0 +1,7 @@
+- Improve build algorithm...
+- Terrain analyze, identify chokes, gating...
+- Unit manager for refinery? 
+
+
+
+- Neural network: Modifies build order dynamically

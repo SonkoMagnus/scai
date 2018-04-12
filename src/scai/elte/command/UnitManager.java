@@ -52,21 +52,16 @@ public class UnitManager {
 	    return Util.sumPosition(ownPosition, new Position((int)(sumAll.first / vectors.size()),(int) (sumAll.second / vectors.size())));
 	}
 	
-	
+	/*
 	public void executeCommand(Command command) {
 		
 	}
-	
+	*/
 	//Main "deciding" loop
 	public void operate () {
 		
 	}
 	
-	/*
-	public void issueRequest() {
-		
-	} 
-	*/
 
 	public Unit getUnit() {
 		return unit;
