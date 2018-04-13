@@ -4,6 +4,9 @@
 - Unit manager for refinery? 
 - Management of addons and upgrades
 - MILITIA: When SCV attacked, respond
+- SCOUTING
+- Adjust targetworkers after condition
+- available gas
 
 
 

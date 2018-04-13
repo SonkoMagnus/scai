@@ -15,11 +15,13 @@ import bwapi.Game;
 import bwapi.Mirror;
 import bwapi.Player;
 import bwapi.Position;
+import bwapi.TechType;
 import bwta.Region;
 import bwapi.TilePosition;
 import bwapi.Unit;
 import bwapi.UnitCommandType;
 import bwapi.UnitType;
+import bwapi.UpgradeType;
 import bwapi.CoordinateType.Enum;
 import bwta.BWTA;
 import bwta.BaseLocation;
@@ -36,6 +38,8 @@ import scai.elte.command.UnitManager;
 import scai.elte.strategy.BuildOrder;
 import scai.elte.strategy.BuildOrderItem;
 import scai.elte.strategy.BuildOrderItemStatus;
+import scai.elte.strategy.TechItem;
+import scai.elte.strategy.UpgradeItem;
 import scai.elte.strategy.plan.BioSquads;
 import scai.elte.strategy.plan.TwoRaxFE;
 
@@ -60,10 +64,12 @@ public class Main extends DefaultBWListener {
      */
     public int reservedMinerals;
     public int reservedMineralsInQueue;
+    
     /**
      * The amount of gas currently reserved for buildings.
      */
     public int reservedGas;
+    public int reservedGasInQueue;
     
     /**
      * Set of all known enemy buildings.
@@ -105,6 +111,7 @@ public class Main extends DefaultBWListener {
     public static BuildOrder buildOrder = new BuildOrder();
     
     public static HashMap<Integer, UnitManager> unitManagers = new HashMap<Integer, UnitManager>();
+    public HashMap<UnitType, HashSet<Integer>> unitIDs = new HashMap<UnitType, HashSet<Integer>>(); //IDs by unit type, for quick access
     
     Random rand;
     
@@ -116,8 +123,11 @@ public class Main extends DefaultBWListener {
     public ArrayList<Unit> scouts = new ArrayList<Unit>();	
     public ArrayList<ArrayList<Unit>> workerGroups = new ArrayList<ArrayList<Unit>>(); 
     
+    
+    
     public static int supplyUsedActual;
     public static Integer availableMinerals;
+    public static Integer availableGas;
     //public int supplyTotal - do i need this?
     
     Set<TilePosition> plannedPositions = new HashSet<TilePosition>();
@@ -148,6 +158,7 @@ public class Main extends DefaultBWListener {
         			boi.status = BuildOrderItemStatus.UNDER_CONSTRUCTION;
 //        			if (DEBUGMODE)	System.out.println("Changing "+ boi.getUnitType() + " to UNDER_CONSTRUCTION" );
         			reservedMinerals = reservedMinerals - boi.getUnitType().mineralPrice();
+        			reservedGas = reservedGas - boi.getUnitType().gasPrice();
                 	break;
         		}
         	}
@@ -165,6 +176,9 @@ public class Main extends DefaultBWListener {
     	} else {
     		unitManagers.put(unit.getID(), new UnitManager(unit));
     	}
+    	
+    	unitIDs.putIfAbsent(unit.getType(), new HashSet<Integer>());
+    	unitIDs.get(unit.getType()).add(unit.getID());
     }
 
     public void countAllUnits() {
@@ -222,6 +236,9 @@ public class Main extends DefaultBWListener {
         		if (unit.getType() == boi.getUnitType()) {
         			boi.status = BuildOrderItemStatus.UNDER_CONSTRUCTION;
 //        if (DEBUGMODE)	System.out.println("Changing "+ boi.getUnitType() + " to UNDER_CONSTRUCTION" );
+        			reservedGasInQueue = reservedGasInQueue - boi.getUnitType().gasPrice();
+        			reservedGas = reservedGas - - boi.getUnitType().gasPrice();
+        			
         			reservedMineralsInQueue = reservedMineralsInQueue - boi.getUnitType().mineralPrice();
         			reservedMinerals = reservedMinerals - boi.getUnitType().mineralPrice();
         		}
@@ -286,7 +303,6 @@ public class Main extends DefaultBWListener {
         		naturalExpansion = bl;
         	}
         }  
- 
         buildOrder = new TwoRaxFE(naturalExpansion.getTilePosition());
     	}
     	catch (Exception ex) {
@@ -298,7 +314,9 @@ public class Main extends DefaultBWListener {
 	@Override
 	public void onUnitDestroy(Unit unit) {
 		unitManagers.remove(unit.getID());
-		System.out.println("Unit " + unit.getType()+ " ID:" + unit.getID() + " destroyed"); 
+    	unitIDs.get(unit.getType()).remove(unit.getID());
+    	
+//		System.out.println("Unit " + unit.getType()+ " ID:" + unit.getID() + " destroyed"); 
 		if (unit.getType().isWorker()) {
 			for (List<Unit> gr : workerGroups) {
 				if (gr.contains(unit)) {
@@ -332,10 +350,6 @@ public class Main extends DefaultBWListener {
         	requests.put(unit.getID() + "_1", new Request(unit, new Command(CommandType.GAS_WORKER)));
         	requests.put(unit.getID() + "_2", new Request(unit, new Command(CommandType.GAS_WORKER)));
         }
-    	
-    
-
-   
     }
     
     public void assignWorker(Unit unit, ArrayList<Unit> group) {
@@ -383,7 +397,7 @@ public class Main extends DefaultBWListener {
     	if (unit.getPlayer() != self && !unit.getType().isNeutral()) {
     //	System.out.println("OMG IT'S A ENEMY"+ unit.getType()  + " IT HAZ A ID:" + unit.getID());
     		game.setLocalSpeed(40);
-    	enemyUnits.add(unit);
+    		enemyUnits.add(unit);
     	}
     	
     	
@@ -415,11 +429,38 @@ public class Main extends DefaultBWListener {
         //Debug / Info
         StringBuilder statusMessages = new StringBuilder();
         availableMinerals = self.minerals() - reservedMinerals;
+        availableGas = self.gas() - reservedGas;
         statusMessages.append("Available minerals:" + availableMinerals.toString() + "\n");
         statusMessages.append("Frame count:" + frameCount + "\n");
         statusMessages.append("Units:" + self.getUnits().size() + " Managers:" + unitManagers.size() + "\n");
-        statusMessages.append("Requests:" + requests.size());
+        statusMessages.append("Requests:" + requests.size()+ "\n");
+        statusMessages.append("APM:" + game.getAPM());
         
+        for (TechItem ti : buildOrder.getTechOrder()) {
+        	TechType tech = ti.getTechType();
+        	if (game.canResearch(tech) && tech.gasPrice() < availableGas && tech.mineralPrice() < availableMinerals) {
+        		if (unitIDs.get(tech.whatResearches()) != null) {
+        		Integer buildingID = unitIDs.get(tech.whatResearches()).iterator().next();
+        		if (unitManagers.get(buildingID).getUnit().canResearch(tech)) {
+        			unitManagers.get(buildingID).getUnit().research(tech);
+        			break;
+        		}
+        		}
+        	}
+        }
+        
+        for (UpgradeItem ti : buildOrder.getUpgradeOrder()) {
+        	UpgradeType upg = ti.getUpgradeType();
+        	if (game.canUpgrade(upg) && upg.gasPrice() < availableGas && upg.mineralPrice() < availableMinerals) {
+        		if (unitIDs.get(upg.whatUpgrades()) != null) {
+        		Integer buildingID = unitIDs.get(upg.whatUpgrades()).iterator().next();
+        		if (unitManagers.get(buildingID).getUnit().canUpgrade(upg)) {
+        			unitManagers.get(buildingID).getUnit().upgrade(upg);
+        			break;
+        		}
+        		}
+        	}
+        }
     	
         //Verify/debug
         for (BaseLocation bl : baseLocations) {
@@ -445,7 +486,7 @@ public class Main extends DefaultBWListener {
         	
         //	game.drawTextMap(c.getCenter().getX(), c.getCenter().getY(), "choke center:" + c.getCenter());
         }
-        
+        //end debug
         
 	   	int workersInProduction = 0;
     	if (unitsInProduction.get(UnitType.Terran_SCV) != null) {
@@ -544,6 +585,7 @@ public class Main extends DefaultBWListener {
 					if (boi.getSupplyThreshold() <= supplyUsedActual && boi.status == BuildOrderItemStatus.PLANNED) {
 						// Reserve minerals
 						reservedMinerals = reservedMinerals + boi.getUnitType().mineralPrice();
+						reservedGas = reservedGas + boi.getUnitType().gasPrice();
 						boi.status = BuildOrderItemStatus.IN_QUEUE;
 					}
 					//Periodically check for false positives - this can occur after failed builds (occupied place, etc)
@@ -552,7 +594,9 @@ public class Main extends DefaultBWListener {
 						boi.gotBuilder = false;
 					}					
 
-					if (boi.status == BuildOrderItemStatus.IN_QUEUE	&& (self.minerals()-reservedMineralsInQueue) >= boi.getUnitType().mineralPrice() &&	game.canMake(boi.getUnitType())) {
+					if (boi.status == BuildOrderItemStatus.IN_QUEUE	&& (self.minerals()-reservedMineralsInQueue) >= boi.getUnitType().mineralPrice()
+							&& self.gas() - reservedGasInQueue >= boi.getUnitType().gasPrice()
+							&&	game.canMake(boi.getUnitType())) {
 						if (!boi.gotBuilder) {
 							Unit builder = null;
 							for (Unit b : builders) {								
@@ -599,6 +643,7 @@ public class Main extends DefaultBWListener {
 								boi.gotBuilder = true;
 								//System.out.print("DEBUG:(build loop) changing reserved minerals from" + reservedMineralsInQueue + " to ");
 								reservedMineralsInQueue += boi.getUnitType().mineralPrice();
+								reservedGasInQueue += boi.getUnitType().gasPrice();
 			        			//System.out.println(reservedMineralsInQueue);
 			        			boi.status=BuildOrderItemStatus.BUILD_PROCESS_STARTED;
 			        			break;					

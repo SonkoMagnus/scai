@@ -2,6 +2,8 @@ package scai.elte.command;
 
 import bwapi.TilePosition;
 import bwapi.Unit;
+import bwapi.UnitCommand;
+import bwapi.UnitCommandType;
 import bwapi.UnitType;
 
 //General command class, for (fighting) units
