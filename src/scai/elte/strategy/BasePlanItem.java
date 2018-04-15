@@ -4,7 +4,14 @@ public class BasePlanItem {
 	
 	private Integer importance; //the higher, the more important is the item
 	private Integer supplyThreshold;
+	private Integer executorId;
 	
+	public Integer getExecutorId() {
+		return executorId;
+	}
+	public void setExecutorId(Integer executorId) {
+		this.executorId = executorId;
+	}
 	public Integer getImportance() {
 		return importance;
 	}

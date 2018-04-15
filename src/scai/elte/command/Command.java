@@ -6,23 +6,17 @@ import bwapi.UnitCommand;
 import bwapi.UnitCommandType;
 import bwapi.UnitType;
 
-//General command class, for (fighting) units
+//General command class, for (fighting) units. Stateless entity, not tracked.
 
 public class Command {
 
 	private CommandType type;
 	private Unit targetUnit;
 	private UnitType targetUnitType; //For build orders, mostly
-	private TilePosition targetPosition;
+	private TilePosition targettilePosition;
 
 	
-	public TilePosition getTargetPosition() {
-		return targetPosition;
-	}
 
-	public void setTargetPosition(TilePosition targetPosition) {
-		this.targetPosition = targetPosition;
-	}
 
 	public Command(CommandType type) {
 		this.type = type;
@@ -61,5 +55,13 @@ public class Command {
 
 	public void setType(CommandType type) {
 		this.type = type;
+	}
+
+	public TilePosition getTargettilePosition() {
+		return targettilePosition;
+	}
+
+	public void setTargettilePosition(TilePosition targettilePosition) {
+		this.targettilePosition = targettilePosition;
 	}
 }
