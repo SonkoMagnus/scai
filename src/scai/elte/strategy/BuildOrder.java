@@ -1,6 +1,7 @@
 package scai.elte.strategy;
 
 import java.util.ArrayList;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import bwapi.TilePosition;
 import bwapi.UnitType;
@@ -9,9 +10,7 @@ public class BuildOrder {
 	
 	public ArrayList<BuildOrderItem> buildOrderList = new ArrayList<BuildOrderItem>();
 	private int supplyExecuted; //When all the items are done.
-	private ArrayList<UpgradeItem> upgradeOrder = new ArrayList<UpgradeItem>(); 
-	private ArrayList<TechItem> techOrder = new ArrayList<TechItem>(); 
-
+	private CopyOnWriteArrayList<BasePlanItem> improveOrder = new CopyOnWriteArrayList<BasePlanItem>();
 	
 	public int getSupplyExecuted() {
 		return supplyExecuted;
@@ -30,21 +29,15 @@ public class BuildOrder {
 		buildOrderList.add(new BuildOrderItem(ut, supply, importance, BuildOrderItemStatus.PLANNED, position));
 	}
 
-	public ArrayList<UpgradeItem> getUpgradeOrder() {
-		return upgradeOrder;
+	public CopyOnWriteArrayList<BasePlanItem> getImproveOrder() {
+		return improveOrder;
 	}
 
-	public void setUpgradeOrder(ArrayList<UpgradeItem> upgradeOrder) {
-		this.upgradeOrder = upgradeOrder;
+	public void setImproveOrder(CopyOnWriteArrayList<BasePlanItem> improveOrder) {
+		this.improveOrder = improveOrder;
 	}
 
-	public ArrayList<TechItem> getTechOrder() {
-		return techOrder;
-	}
 
-	public void setTechOrder(ArrayList<TechItem> techOrder) {
-		this.techOrder = techOrder;
-	}
-	
+
 
 }

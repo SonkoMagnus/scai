@@ -18,4 +18,5 @@ public class BasePlanItem {
 		this.supplyThreshold = supplyThreshold;
 	}
 
+
 }

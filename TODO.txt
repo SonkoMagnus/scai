@@ -2,12 +2,14 @@
 - Terrain analyze, identify chokes, gating... walling
 	- Naturalchoke identify
 - Unit manager for refinery? 
-- Management of addons and upgrades
-- MILITIA: When SCV attacked, respond
+- Improve "pick one for addon/research/upgrade" algorithm, make methods
+
+
+- MILITIA: When SCV attacke, respond
 - SCOUTING
 - Adjust targetworkers after condition
-- available gas
 
-
+- Building algorithm: exact place, around some spot
+- Base/expansion management
 
 - Neural network: Modifies build order dynamically

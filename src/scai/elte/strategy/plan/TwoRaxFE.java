@@ -25,15 +25,21 @@ public class TwoRaxFE extends BuildOrder {
 		
 		addItem(UnitType.Terran_Supply_Depot, 18, 1);	
 		addItem(UnitType.Terran_Barracks, 22, 1);	
-		addItem(UnitType.Terran_Barracks, 26, 1);	
+		addItem(UnitType.Terran_Barracks, 26, 1);
+		
+		
+		addItem(UnitType.Terran_Academy, 20, 1);
+		addItem(UnitType.Terran_Academy, 20, 1);
 		
 		addItem(UnitType.Terran_Supply_Depot, 28, 1);
 		addItem(UnitType.Terran_Refinery, 36, 1);
 		addItem(UnitType.Terran_Academy, 38, 1);
 		addItem(UnitType.Terran_Supply_Depot, 48, 1);
-		getTechOrder().add(new TechItem(TechType.Stim_Packs, 52, 3));
-		getUpgradeOrder().add(new UpgradeItem(UpgradeType.U_238_Shells, 52, 2));
+		getImproveOrder().add(new TechItem(TechType.Stim_Packs, 52, 3));
+		getImproveOrder().add(new UpgradeItem(UpgradeType.U_238_Shells, 52, 2, 1));
+		addItem(UnitType.Terran_Comsat_Station, 40, 1);
 		
+		this.setSupplyExecuted(56);
 	}
 
 }

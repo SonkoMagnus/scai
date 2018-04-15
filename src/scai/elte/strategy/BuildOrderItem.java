@@ -1,7 +1,5 @@
 package scai.elte.strategy;
 
-import java.util.UUID;
-
 import bwapi.TilePosition;
 import bwapi.UnitType;
 
