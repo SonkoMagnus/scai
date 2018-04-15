@@ -61,7 +61,6 @@ public class UnitManager {
 	public void operate () {
 		
 	}
-	
 
 	public Unit getUnit() {
 		return unit;

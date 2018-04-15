@@ -1,15 +1,16 @@
-- Improve build algorithm...
+- SCOUTING..
+- Improve build algorithm...^^
+	- Reserve default comsat space(s)?
 - Terrain analyze, identify chokes, gating... walling
 	- Naturalchoke identify
 - Unit manager for refinery? 
-- Improve "pick one for addon/research/upgrade" algorithm, make methods
-
-
+- Scan
+- WorkerManager
 - MILITIA: When SCV attacke, respond
-- SCOUTING
 - Adjust targetworkers after condition
 
 - Building algorithm: exact place, around some spot
 - Base/expansion management
 
-- Neural network: Modifies build order dynamically
+- Neural network: Modifies build order dynamically, alters squad composition, and targeting
+- Squads:

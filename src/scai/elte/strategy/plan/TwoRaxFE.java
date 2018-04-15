@@ -27,10 +27,6 @@ public class TwoRaxFE extends BuildOrder {
 		addItem(UnitType.Terran_Barracks, 22, 1);	
 		addItem(UnitType.Terran_Barracks, 26, 1);
 		
-		
-		addItem(UnitType.Terran_Academy, 20, 1);
-		addItem(UnitType.Terran_Academy, 20, 1);
-		
 		addItem(UnitType.Terran_Supply_Depot, 28, 1);
 		addItem(UnitType.Terran_Refinery, 36, 1);
 		addItem(UnitType.Terran_Academy, 38, 1);

@@ -84,12 +84,12 @@ public class MarineManager extends UnitManager {
 						for (int j = -1; j<2;j++) {
 							int x = marine.getPosition().getX();
 							int y = marine.getPosition().getY();
-							TilePosition direction = new TilePosition(x+i, y+j);
+							Position direction = new Position(x+i, y+j);
 							ed = direction.getDistance(nearestEnemy.getPosition().getX() ,nearestEnemy.getPosition().getY());
 						
 							if (ed > maxEd) {
 								maxEd = ed;
-								moveTile= direction.toPosition();
+								moveTile= direction;
 					
 								
 							}

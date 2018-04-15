@@ -9,10 +9,13 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.sun.org.apache.xerces.internal.impl.dtd.models.CMStateSet;
+
 import bwapi.Color;
 import bwapi.DefaultBWListener;
 import bwapi.Game;
 import bwapi.Mirror;
+import bwapi.Pair;
 import bwapi.Player;
 import bwapi.Position;
 import bwapi.TechType;
@@ -30,6 +33,7 @@ import scai.elte.command.BuildingManager;
 import scai.elte.command.BunkerManager;
 import scai.elte.command.Command;
 import scai.elte.command.CommandType;
+import scai.elte.command.ComsatManager;
 import scai.elte.command.MarineManager;
 import scai.elte.command.Request;
 import scai.elte.command.Request.RequestType;
@@ -171,6 +175,8 @@ public class Main extends DefaultBWListener {
     		unitManagers.put(unit.getID(), new BunkerManager(unit));
     	} else if (unit.getType() == UnitType.Terran_Marine) {
     		unitManagers.put(unit.getID(), new MarineManager(unit));
+    	} else if (unit.getType() == UnitType.Terran_Comsat_Station) {
+    		unitManagers.put(unit.getID(), new ComsatManager(unit));
     	} else if (unit.getType().isBuilding()) {
     		unitManagers.put(unit.getID(), new BuildingManager(unit));
     	} else {
@@ -318,6 +324,7 @@ public class Main extends DefaultBWListener {
         for (BuildOrderItem boi : buildOrder.buildOrderList) {
         	if (boi.status == BuildOrderItemStatus.UNDER_CONSTRUCTION) {
         		if (unit.getType() == boi.getUnitType()) {
+        			System.out.println("Setting " + boi.getUnitType() + " to DONE");
         			boi.status = BuildOrderItemStatus.DONE;
 				    int i = unit.getTilePosition().getX();
 				    int j = unit.getTilePosition().getY();
@@ -333,8 +340,10 @@ public class Main extends DefaultBWListener {
         if (unit.getType() == UnitType.Terran_Refinery) {
         	requests.put(unit.getID() + "_1", new Request(unit, new Command(CommandType.GAS_WORKER)));
         	requests.put(unit.getID() + "_2", new Request(unit, new Command(CommandType.GAS_WORKER)));
+        	
         }
     }
+    
     
     public void assignWorker(Unit unit, ArrayList<Unit> group) {
     	for (List<Unit> gr : workerGroups) {
@@ -379,7 +388,7 @@ public class Main extends DefaultBWListener {
     @Override
     public void onUnitShow(Unit unit) {
     	if (unit.getPlayer() != self && !unit.getType().isNeutral()) {
-    //	System.out.println("OMG IT'S A ENEMY"+ unit.getType()  + " IT HAZ A ID:" + unit.getID());
+    	System.out.println("OMG IT'S A ENEMY"+ unit.getType()  + " IT HAZ A ID:" + unit.getID());
     		game.setLocalSpeed(40);
     		enemyUnits.add(unit);
     	}
@@ -399,7 +408,6 @@ public class Main extends DefaultBWListener {
     public void onUnitDiscover(Unit unit) {
     	
     	//if unit.getPlayer() //ENemy unit management
-    	
     }
     
     
@@ -422,16 +430,27 @@ public class Main extends DefaultBWListener {
         
         
         for (BasePlanItem bpi : buildOrder.getImproveOrder()) {
+        	if (bpi.getExecutorId() == null || !unitManagers.containsKey(bpi.getExecutorId())) {
+        	//	System.out.println("Upgradeloop" + bpi.getExecutorId());
         	if (bpi instanceof TechItem) {
         		TechType tech = ((TechItem) bpi).getTechType();
         		
             	if (game.canResearch(tech) && tech.gasPrice() < availableGas && tech.mineralPrice() < availableMinerals) {
             		if (unitIDs.get(tech.whatResearches()) != null) {
+            			BuildingManager bm = (BuildingManager) getResearcher(tech);
+            			if (bm!= null) {
+            				System.out.println("WUT");
+            				bm.getImproveList().add(bpi);
+            				bpi.setExecutorId(bm.getUnit().getID());
+            				break;
+            			};
+            			/*
             		Integer buildingID = unitIDs.get(tech.whatResearches()).iterator().next();
             		if (unitManagers.get(buildingID).getUnit().canResearch(tech)) {
-            			((BuildingManager)unitManagers.get(buildingID)).getImproveList().add(bpi);
+            			((BuildingManager)unitManagers
             			break;
             		}
+            		*/
             		}
             	} else if (self.hasResearched(tech)) {
             		buildOrder.getImproveOrder().remove(bpi);   
@@ -441,17 +460,27 @@ public class Main extends DefaultBWListener {
         		UpgradeType upg = ((UpgradeItem) bpi).getUpgradeType();
         		if (game.canUpgrade(upg) && upg.gasPrice() < availableGas && upg.mineralPrice() < availableMinerals) {
             		if (unitIDs.get(upg.whatUpgrades()) != null) {
-            		Integer buildingID = unitIDs.get(upg.whatUpgrades()).iterator().next();
-            		if (unitManagers.get(buildingID).getUnit().canUpgrade(upg)) {
-            			((BuildingManager)unitManagers.get(buildingID)).getImproveList().add(bpi);
+            		//Integer buildingID = unitIDs.get(upg.whatUpgrades()).iterator().next();
+            			BuildingManager bm = (BuildingManager) getUpgrader(upg);
+            		if (bm != null) {
+            			bm.getImproveList().add(bpi);
+            			bpi.setExecutorId(bm.getUnit().getID());
             			break;
             		}
+            		/*
+            		if (unitManagers.get(buildingID).getUnit().canUpgrade(upg)) {
+            			((BuildingManager)unitManagers.get(buildingID)) .getImproveList().add(bpi);
+            			break;
+            		}
+            		*/
             		}
             	} else if (self.getUpgradeLevel(upg) >= ((UpgradeItem)bpi).getLevel()) { //already upgraded
             		buildOrder.getImproveOrder().remove(bpi);   
             	}
         		
         	}
+        	
+        }
         }
     	
         //Verify/debug
@@ -515,10 +544,10 @@ public class Main extends DefaultBWListener {
         }
         
     	 */
-    	
-			for (Request r : requests.values()) {
+			for (String rk : requests.keySet()) {
+				Request r = requests.get(rk);
 				if (r.getRequestStatus() == RequestStatus.FULFILLED) {
-					requests.remove(r);
+					requests.remove(rk);
 				}
 
 				if (r.getType() == RequestType.COMMAND) {
@@ -593,13 +622,10 @@ public class Main extends DefaultBWListener {
 							&& self.gas() - reservedGasInQueue >= buildingType.gasPrice()
 							&& game.canMake(buildingType)) {
 						if (buildingType.isAddon()) {
-							if (unitIDs.get(boi.getUnitType().whatBuilds().first) != null) {
-								Integer buildingID = unitIDs.get(boi.getUnitType().whatBuilds().first).iterator().next();
-				
-								if (unitManagers.get(buildingID).getUnit().canBuild(boi.getUnitType())) {
-									unitManagers.get(buildingID).getUnit().buildAddon(buildingType);
-									break;
-								}
+							if (unitIDs.get(buildingType.whatBuilds().first) != null) {
+								System.out.println("ADDON requested");
+								((BuildingManager) getAddonBuilder(buildingType)).setAddon(new Pair<>(buildingType, false));
+								boi.status = BuildOrderItemStatus.UNDER_CONSTRUCTION; //TODO unit manager to do this?
 							}
 						} else {
 
@@ -690,8 +716,7 @@ public class Main extends DefaultBWListener {
 						if (r.getRequestedCommand().getType() == CommandType.GAS_WORKER
 								&& r.getRequestStatus() == RequestStatus.BEING_ANSWERED
 								&& r.getAnsweringUnit().getID() == worker.getID()) {
-							if (worker.isCarryingGas()) {
-								// Fulfilled
+							if (worker.isGatheringGas()) {
 								r.setRequestStatus(RequestStatus.FULFILLED);
 							} else {
 								if (!worker.isGatheringGas()) {
@@ -703,7 +728,36 @@ public class Main extends DefaultBWListener {
 					}
 				}
 			}
+			
+			
+			
+		       if (workerCount == 10 && scouts.size() ==0) {
+		        	assignWorker(mineralWorkers.get(rand.nextInt(mineralWorkers.size())), scouts);
+		        }
+		        
+		        /*
+		         * game.drawBox(Enum.Map, bl.getRegion().getCenter().getX(), bl.getRegion().getCenter().getY(), bl.getRegion().getCenter().getX()+10, 
+		    				bl.getRegion().getCenter().getY()+10, Color.Red, true);
+		         */
+		        
+		        //Basic scouting behavior WIP
+		       /*
+		        for (Unit sc : scouts) {
+		        	for (BaseLocation loc : baseLocations) {
+		        		
+		        		if (!sc.isMoving()) {
+		        		if (!game.isExplored(loc.getRegion().getCenter().toTilePosition())) {
+		        			sc.move(loc.getRegion().getCenter());
+		        			game.drawTextMap(sc.getPosition().getX(), sc.getPosition().getY(), "SCOUT");
+		        			break;
+		        		}
+		        		}
+		        	}
+		        	
+		        	
+		        }
 
+*/
 
         for (Unit myUnit : self.getUnits()) {
         	//game.drawTextMap(myUnit.getPosition().getX(), myUnit.getPosition().getY(), "ID:" + myUnit.getID());
@@ -711,8 +765,19 @@ public class Main extends DefaultBWListener {
         	//game.drawLineMap(myUnit.getPosition().getX(), myUnit.getPosition().getY(), myUnit.getOrderTargetPosition().getX(), 
         		//	 myUnit.getOrderTargetPosition().getY(), bwapi.Color.Black);
         	int b = workerCount + workersInProduction;
-            //if there's enough minerals, train an SCV
-            if (myUnit.getType() == UnitType.Terran_Command_Center && availableMinerals >= 50 && b < targetWorkers) {
+        
+        	//TODO experimental, test
+        	if (myUnit.getType().isWorker()) {
+        		if (myUnit.isUnderAttack()) {
+        			Main.requests.putIfAbsent(myUnit.getID()+"D", new Request(myUnit, null, RequestType.DEFEND));	 //When to delete?
+        		} else {
+        			Main.requests.remove(myUnit.getID() + "D");
+        		}
+        	}
+        	
+        	
+        	//if there's enough minerals, train an SCV        	
+            if (myUnit.getType() == UnitType.Terran_Command_Center && availableMinerals >= 50 && b < targetWorkers+scouts.size()) { //TODO CC manager
             	trainUnit(myUnit, UnitType.Terran_SCV); 
             }
             
@@ -720,12 +785,15 @@ public class Main extends DefaultBWListener {
             	trainUnit(myUnit, UnitType.Terran_Marine);
             }
 			if (myUnit.getType().isWorker() && myUnit.isCompleted()) {
-				if (myUnit.isIdle()) {
+				if (myUnit.isIdle() && !scouts.contains(myUnit)) { //TODO revise this
 					assignWorker(myUnit, mineralWorkers);						
 				} 
 			}
 
         }
+        
+        
+        requestScanIfNeeded();
 
 
         
@@ -739,6 +807,75 @@ public class Main extends DefaultBWListener {
     public static void main(String[] args) {
         new Main().run();
     }
+    
+    
+    public void requestScanIfNeeded() {
+    	
+    	for (Unit enemy : enemyUnits) {
+    		if (enemy.getType() == UnitType.Zerg_Lurker) {
+    			if (enemy.isAttacking() && enemy.isBurrowed()) {
+    				Command scan = new Command(CommandType.SCAN);
+        			TilePosition tp = enemy.getTilePosition();
+        			scan.setTargettilePosition(tp);
+        			Request r = new Request(null, scan);
+        			requests.put(tp.getX() + "scan" + tp.getY(), r);
+        			//System.out.println("SCAN REQUESTED ON" + tp.getX() + tp.getY());
+    			}
+    				//duration:10, i have no idea what that means
+    			//System.out.println("LURKER att:" + enemy.isAttacking() + " VISIBLE: " + enemy.isVisible() + " TaRGETable:" + enemy.isTargetable());
+    			
+    		}
+    		//DUNNO LOL
+    		if (enemy.isAttacking() && !enemy.isTargetable()) {
+    			Command scan = new Command(CommandType.SCAN);
+    			TilePosition tp = enemy.getTilePosition();
+    			scan.setTargettilePosition(tp);
+    			Request r = new Request(null, scan);
+    			requests.put(tp.getX() + "scan" + tp.getY(), r);
+    			System.out.println("SCAN REQUESTED ON" + tp.getX() + tp.getY());
+    			
+    		}
+    	}
+    }
+    
+    //Convenience method for getting a "random" available upgrader
+    public UnitManager getUpgrader(UpgradeType upg) {
+    	if (unitIDs.get(upg.whatUpgrades()) != null) {
+    		for (Integer buildingID : unitIDs.get(upg.whatUpgrades())) {
+    			if (unitManagers.get(buildingID).getUnit().canUpgrade(upg)) {
+					return unitManagers.get(buildingID);
+				}    			
+    		}
+
+		}
+		return null;
+    }
+    
+    //Convenience method for getting a "random" available upgrader
+    public UnitManager getResearcher(TechType tech) {
+    	if (unitIDs.get(tech.whatResearches()) != null) {
+    		for (Integer buildingID : unitIDs.get(tech.whatResearches())) {
+    			if (unitManagers.get(buildingID).getUnit().canResearch(tech)) {
+					return unitManagers.get(buildingID);
+				}
+    			
+    		}
+		}
+		return null;
+    }
+    
+  //Convenience method for getting a "random" available addon builder
+	public UnitManager getAddonBuilder(UnitType addonType) {
+		System.out.println("ADDON");
+		if (unitIDs.get(addonType.whatBuilds().first) != null) {
+			for (Integer buildingID : unitIDs.get(addonType.whatBuilds().first)) {
+				if (unitManagers.get(buildingID).getUnit().canBuild(addonType)) {
+					return unitManagers.get(buildingID);
+				}
+			}
+		}
+		return null;
+	}
     
     
     public TilePosition getBuildTile(Unit builder, UnitType buildingType, TilePosition aroundTile) {
