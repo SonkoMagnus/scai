@@ -64,6 +64,18 @@ public class MapUtil {
 		return nearestUnit;
 	}
 	
+	public static Unit getWeakestUnit(Collection<Unit> units) {
+		int minHp = Integer.MAX_VALUE;
+		Unit weakest = null;
+		for (Unit u : units) {
+			if (u.getHitPoints() < minHp) {
+				minHp = u.getHitPoints();
+				weakest = u;
+			}
+		}
+		return weakest;
+	}
+	
 	/*
 	public static Unit getNearestAttackableUnit(Collection<Unit> units, Unit attacker) {
 		int dist = 0;

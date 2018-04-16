@@ -13,8 +13,6 @@ public class UnitManager {
 	
 	private Unit unit;
 	private boolean gotTask;
-	private Command unitCommand;
-	
 	
 	public UnitManager(Unit unit) {
 		this.unit=unit;

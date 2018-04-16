@@ -1,12 +1,18 @@
 - SCOUTING..
-- Improve build algorithm...^^
+- Improve build algorithm:
 	- Reserve default comsat space(s)?
 - Terrain analyze, identify chokes, gating... walling
 	- Naturalchoke identify
-- Unit manager for refinery? 
 - Scan
-- WorkerManager
-- MILITIA: When SCV attacke, respond
+	- cooldown, keep track of scanned tiles
+
+- WorkerManager 
+ 	- IDLE builder reassign
+ 	- SCOUT
+ 	
+- MILITIA:
+	- when no threat present, stop
+	- lowest hp instead of nearest
 - Adjust targetworkers after condition
 
 - Building algorithm: exact place, around some spot

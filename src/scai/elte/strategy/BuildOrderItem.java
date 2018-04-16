@@ -10,7 +10,6 @@ public class BuildOrderItem extends BasePlanItem {
 	private TilePosition tilePosition;
 
 	public BuildOrderItemStatus status;
-	public boolean gotBuilder = false;
 	
 	public BuildOrderItem(UnitType unitType,  Integer supplyThreshold,Integer importance, BuildOrderItemStatus status) {
 		this.unitType=unitType;
