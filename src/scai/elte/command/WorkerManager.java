@@ -1,9 +1,12 @@
 package scai.elte.command;
 
+import java.util.HashSet;
+
 import bwapi.Order;
 import bwapi.TilePosition;
 import bwapi.Unit;
 import bwapi.UnitCommandType;
+import bwapi.UnitType;
 import bwta.Region;
 import scai.elte.command.Request.RequestType;
 import scai.elte.main.Main;
@@ -15,8 +18,10 @@ public class WorkerManager extends UnitManager {
 	private WorkerRole role;
 	private TilePosition targetTile;
 	private Unit targetUnit;
+	private UnitType buildType;
 	
 	private WorkerRole prevRole;
+	
 	//Region def = MapUtil.getRegionOfUnit(r.getRequestingUnit());
 	//Set<Unit> unitsInRegion = MapUtil.getUnitsInRegion(def);
 
@@ -31,7 +36,9 @@ public class WorkerManager extends UnitManager {
 	
 	@Override
 	public void operate() {
+		boolean changeRole = false;
 		Unit worker = getUnit();
+		if (worker.isCompleted()) {
 		if (worker.isUnderAttack()) {
 			Main.requests.putIfAbsent(worker.getID()+"D", new Request(worker, null, RequestType.DEFEND));	 //When to delete?
 		} else {
@@ -40,21 +47,27 @@ public class WorkerManager extends UnitManager {
 		
 		
 		if (role == WorkerRole.BUILD) {
-			if (targetUnit != null) {
-					// Try to build until it's completed
-					if (worker.getOrder() != Order.PlaceBuilding || worker.getOrder() != Order.ConstructingBuilding) {
-						worker.build(targetUnit.getType(), targetTile);
+
+					if ((worker.getOrder() == Order.PlaceBuilding)) {
+						buildType = worker.getBuildType();
+						
 					}
-					if (targetUnit.isCompleted()) {
-						targetUnit = null;
-						targetTile = null;
+					if ((worker.getOrder() == Order.ConstructingBuilding)) {
+						targetUnit = worker.getOrderTarget();
 					}
 					
-			} else {
-				if (worker.isIdle()) {
-					role = WorkerRole.MINERAL;
-				}
-			}
+					if (targetUnit != null && targetUnit.isCompleted()) { //not gud
+						System.out.println(targetUnit.getType() + " completed");
+						targetUnit = null;
+						targetTile = null;
+						changeRole = true;
+					}
+					
+					if (!worker.isConstructing() && targetUnit != null) {
+						worker.build(targetUnit.getType(), targetTile);
+					}
+					
+		
 		} else if (role == WorkerRole.MINERAL) {
 			
     		if (worker.isIdle()) {
@@ -94,11 +107,23 @@ public class WorkerManager extends UnitManager {
 			}
 		} else if (role == WorkerRole.MILITIA) {
 			if (worker.getLastCommand().getUnitCommandType() != UnitCommandType.Attack_Move) {
-				Region def = MapUtil.getRegionOfUnit(worker); 
-				Unit enemy = MapUtil.getWeakestUnit(MapUtil.getUnitsInRegion(def));
+				/*
+				Region def = MapUtil.getRegionOfUnit(worker);
+				HashSet<Unit> enemies = (HashSet<Unit>) MapUtil.getUnxitsInRegion(def, true);
+				System.out.println("esize:" + enemies.size());
+				for (Unit e : enemies) {
+					if (e.getPlayer() != 
+				}
+				Unit enemy = MapUtil.getWeakestUnit(MapUtil.getUnitsInRegion(def, true));
 				worker.attack(enemy);
+				*/
     		}
     		
+		}
+		}
+		if (changeRole) {
+			System.out.println("Current:" + role + " prev:" + prevRole);
+			role = prevRole;
 		}
 		// worker.getTarget().getTilePosition(); //location to put
 	}
@@ -137,6 +162,14 @@ public class WorkerManager extends UnitManager {
 
 	public void setPrevRole(WorkerRole prevRole) {
 		this.prevRole = prevRole;
+	}
+
+	public UnitType getBuildType() {
+		return buildType;
+	}
+
+	public void setBuildType(UnitType buildType) {
+		this.buildType = buildType;
 	}
 
 }

@@ -12,8 +12,12 @@ import scai.elte.command.UnitManager;
 //Utility class for location items in the map
 public class MapUtil {
 	
-	//convenience method: Checki if a unit is inside a BWTA region
+
 	public static Set<Unit> getUnitsInRegion (Region region) {
+		return getUnitsInRegion(region, false);
+	}
+	
+	public static Set<Unit> getUnitsInRegion (Region region, boolean onlyEnemies) {
 		Set<Unit> unitsInRegion = new HashSet<Unit>();
 		for (UnitManager um : Main.unitManagers.values()) {
 			Unit unit = um.getUnit();
@@ -23,17 +27,7 @@ public class MapUtil {
 			if (region.getCenter().getDistance(unit.getPosition()) < region.getCenter().getDistance(closestBorder)) {
 				unitsInRegion.add(unit);
 			}
-			//TOD
-			region.getPolygon();
 		}
-		//Set<Unit> enemies = new HashSet<Unit>();
-		/*
-		for (Unit u :region.getUnits()) {
-			if (u.getPlayer() != Main.self) {
-				enemies.add(u);
-			}
-		}
-		*/
 		return unitsInRegion;
 	}
 	
@@ -61,6 +55,7 @@ public class MapUtil {
 				nearestUnit = u;
 			}
 		}
+		
 		return nearestUnit;
 	}
 	
@@ -68,11 +63,13 @@ public class MapUtil {
 		int minHp = Integer.MAX_VALUE;
 		Unit weakest = null;
 		for (Unit u : units) {
+			System.out.println(u.getHitPoints());
 			if (u.getHitPoints() < minHp) {
 				minHp = u.getHitPoints();
 				weakest = u;
 			}
 		}
+		System.out.println("weakest" + weakest);
 		return weakest;
 	}
 	

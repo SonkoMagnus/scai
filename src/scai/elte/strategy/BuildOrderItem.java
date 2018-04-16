@@ -11,6 +11,7 @@ public class BuildOrderItem extends BasePlanItem {
 
 	public BuildOrderItemStatus status;
 	
+	
 	public BuildOrderItem(UnitType unitType,  Integer supplyThreshold,Integer importance, BuildOrderItemStatus status) {
 		this.unitType=unitType;
 		this.setSupplyThreshold(supplyThreshold);

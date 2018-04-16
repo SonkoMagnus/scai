@@ -5,14 +5,7 @@
 	- Naturalchoke identify
 - Scan
 	- cooldown, keep track of scanned tiles
-
-- WorkerManager 
- 	- IDLE builder reassign
- 	- SCOUT
- 	
-- MILITIA:
-	- when no threat present, stop
-	- lowest hp instead of nearest
+	
 - Adjust targetworkers after condition
 
 - Building algorithm: exact place, around some spot
