@@ -16,10 +16,6 @@ public class BunkerManager extends BuildingManager {
 			if (getUnit().getLoadedUnits().size() == 0) {
 				requestDefenseIfNeeded();
 			}
-			
-			//System.out.println("OPERATIN BUNKER...");
-			//Issue a bunker manning request
-		
 			for (int i=getUnit().getLoadedUnits().size();i<4;i++) {
 				Command c = new Command(CommandType.MAN_BUNKER);
 				String id = getUnit().getID() + "_" + i;

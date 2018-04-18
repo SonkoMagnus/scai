@@ -4,7 +4,10 @@
 - Terrain analyze, identify chokes, gating... walling
 	- Naturalchoke identify
 - Scan
-	- cooldown, keep track of scanned tiles
+	- cooldown, keep track of scanned tiles - heatmap?
+
+
+
 	
 - Adjust targetworkers after condition
 

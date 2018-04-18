@@ -95,7 +95,7 @@ public class Main extends DefaultBWListener {
      */
 	public int maximumWorkers = 45;
 	
-	public int frameCount = 0;
+	public static int frameCount = 0;
 	
     /**
      * Keeps track of how many units of each unit type the player has.
@@ -115,23 +115,15 @@ public class Main extends DefaultBWListener {
     
     public static HashMap<Integer, UnitManager> unitManagers = new HashMap<Integer, UnitManager>();
     
+    public static HashMap<Position, Integer> scannerPositions = new HashMap<Position, Integer>();
+    
     public HashMap<UnitType, HashSet<Integer>> unitIDs = new HashMap<UnitType, HashSet<Integer>>(); //IDs by unit type, for quick access
     Random rand;
-    /*
-    //Worker groups
-    public ArrayList<Unit> mineralWorkers = new ArrayList<Unit>(); //Default activity
-    public ArrayList<Unit> gasWorkers = new ArrayList<Unit>();
-    public ArrayList<Unit> builders  = new ArrayList<Unit>();
-    public ArrayList<Unit> militia = new ArrayList<Unit>(); //SCVs fighting
-    public ArrayList<Unit> scouts = new ArrayList<Unit>();	
-    public ArrayList<ArrayList<Unit>> workerGroups = new ArrayList<ArrayList<Unit>>(); 
-    */
     public ArrayList<Integer> workerManagerIDs = new ArrayList<Integer>() ;
     
     public static int supplyUsedActual;
     public static Integer availableMinerals;
     public static Integer availableGas;
-    //public int supplyTotal - do i need this?
     
     Set<TilePosition> plannedPositions = new HashSet<TilePosition>();
     public static ConcurrentHashMap<String, Request> requests = new ConcurrentHashMap<String, Request>();
@@ -148,7 +140,6 @@ public class Main extends DefaultBWListener {
     
     @Override
     public void onUnitCreate(Unit unit) {
-      //  System.out.println("New unit discovered " + unit.getType());
         if (unit.getType() != UnitType.Resource_Mineral_Field && unit.getType() != UnitType.Resource_Vespene_Geyser && unit.getType() != UnitType.Unknown) {
 	        assignUnitManager(unit);
         }
@@ -249,6 +240,18 @@ public class Main extends DefaultBWListener {
         }
     	
     }
+    
+    public void updateScannedPositions () { 
+    	for (Position p : scannerPositions.keySet()) {
+    		int age = scannerPositions.get(p);
+    		if (age>0) {
+    			age--;
+    			scannerPositions.put(p, age);
+    		} else {
+    			scannerPositions.remove(p);
+    		}
+    	}
+    }
 
     @Override
     public void onStart() {
@@ -310,20 +313,14 @@ public class Main extends DefaultBWListener {
 
 	@Override
 	public void onUnitDestroy(Unit unit) {
+    	if (unit.getType() == UnitType.Spell_Scanner_Sweep && unit.getPlayer() == self) {
+    		System.out.println("scanned diede:" + frameCount);
+    	}
 		
+		if (unit.getType().isWorker() && unit.getPlayer() == self) {
 		workerManagerIDs.remove(Integer.valueOf(unit.getID()));
-		unitManagers.remove(unit.getID());
-    	//unitIDs.get(unit.getType()).remove(unit.getID());
-		//if unit.getPlayer() == self TODO
-		/*
-		if (unit.getType().isWorker()) {
-			for (List<Unit> gr : workerGroups) {
-				if (gr.contains(unit)) {
-					gr.remove(unit);
-				}
-			}
 		}
-		*/
+		unitManagers.remove(unit.getID());
 	}
     
     @Override
@@ -385,44 +382,7 @@ public class Main extends DefaultBWListener {
     	}
     	return null;
     }
-    
-    /*
-    @Deprecated
-    public void assignWorker(Unit unit, ArrayList<Unit> group) {
-    	System.out.println(workerGroups);
-    	for (List<Unit> gr : workerGroups) {
-    		if (gr == group) {
-    			if (!gr.contains(unit)) {
-    				gr.add(unit);
-    			}
-    		} else {
-    			if (gr.contains(unit)) {
-    				gr.remove(unit);
-    			}
-    		}
-    		
-    	}
-    }
-    
-    @Deprecated
-    public void assignWorker(Collection<Unit> units, ArrayList<Unit> group) {
-    	for (Unit unit : units) {
-    	
-    	for (List<Unit> gr : workerGroups) {
-    		if (gr == group) {
-    			if (!gr.contains(unit)) {
-    				gr.add(unit);
-    			}
-    		} else {
-    			if (gr.contains(unit)) {
-    				gr.remove(unit);
-    			}
-    		}
-    		
-    	}
-    	}
-    }*/
-    
+  
 
     public void trainUnit(Unit producer, UnitType unitType) {
     	if (producer.getTrainingQueue().size() < 1) {
@@ -454,9 +414,17 @@ public class Main extends DefaultBWListener {
     
     @Override
     public void onUnitDiscover(Unit unit) {
-    	if (unit.getType() == UnitType.Spell_Scanner_Sweep) {
+    	if (unit.getType() == UnitType.Spell_Scanner_Sweep && unit.getPlayer() == self) {
+    		System.out.println("scanned spawn:" + frameCount);
     		scanned = true;
     		scan = unit;
+    		Set<Position> sc = MapUtil.getPositionsInRadius(unit.getPosition(), 320);
+    		scannerPositions.put(unit.getPosition(), 262);
+    		/*
+    		for (Position p : sc) {
+    		scannedPositions.put(p, 262); 
+    		}
+    		*/
     	}
     	//if unit.getPlayer() //ENemy unit management
     }
@@ -474,7 +442,7 @@ public class Main extends DefaultBWListener {
         availableMinerals = self.minerals() - reservedMinerals;
         availableGas = self.gas() - reservedGas;
         statusMessages.append("Available minerals:" + availableMinerals.toString() + "\n");
-        statusMessages.append("Frame count:" + frameCount + "\n");
+        statusMessages.append("Frame count:" + frameCount+ "\n");
         statusMessages.append("Units:" + self.getUnits().size() + " Managers:" + unitManagers.size() + "\n");
         statusMessages.append("Requests:" + requests.size()+ "\n");
         statusMessages.append("APM:" + game.getAPM());
@@ -482,11 +450,16 @@ public class Main extends DefaultBWListener {
         //self.
         //System.out.println(self.sightRange(UnitType.Spell_Scanner_Sweep));
         if (scanned) {
-     
-        	game.drawCircle(Enum.Map, scan.getX(), scan.getY(), 160, Color.Red);
-        	game.drawBox(Enum.Map, scan.getLeft()+160, scan.getTop()+160, scan.getRight()+160, scan.getBottom()+160, Color.Cyan);
+        	//System.out.println(scan.getRemoveTimer());
+        	//scan.get
+        	game.drawCircle(Enum.Map, scan.getX(), scan.getY(), 320, Color.Red);
+        	//tiles in radius?
+        	
+        	//game.drawBox(Enum.Map, scan.getLeft()+160, scan.getTop()+160, scan.getRight()+160, scan.getBottom()+160, Color.Cyan);
+        	//
         }
         
+        updateScannedPositions();
         
         for (BasePlanItem bpi : buildOrder.getImproveOrder()) {
         	if (bpi.getExecutorId() == null || !unitManagers.containsKey(bpi.getExecutorId())) {
@@ -673,8 +646,11 @@ public class Main extends DefaultBWListener {
 						if (buildingType.isAddon()) {
 							System.out.println("Addon...");
 							if (unitIDs.get(buildingType.whatBuilds().first) != null) {
-								((BuildingManager) getAddonBuilder(buildingType)).setAddon(new Pair<>(buildingType, false));
-								boi.status = BuildOrderItemStatus.UNDER_CONSTRUCTION; 
+								BuildingManager addonBuilder = ((BuildingManager) getAddonBuilder(buildingType));
+								if (addonBuilder != null) {
+									addonBuilder.setAddon(new Pair<>(buildingType, false)); 
+									boi.status = BuildOrderItemStatus.UNDER_CONSTRUCTION;
+								}
 							}
 						} else {
 							
@@ -748,18 +724,24 @@ public class Main extends DefaultBWListener {
     	for (Unit enemy : enemyUnits) {
     		if (enemy.getType() == UnitType.Zerg_Lurker) {
     			if (enemy.isAttacking() && enemy.isBurrowed()) {
+    				TilePosition tp = enemy.getTilePosition();
+    				String key = tp.getX() + "sc" + tp.getY();
+    				System.out.println("Rkeyset:" + requests.keySet());
+    				System.out.println(key);
+    				if (!requests.containsKey(key)) { 
     				Command scan = new Command(CommandType.SCAN);
-        			TilePosition tp = enemy.getTilePosition();
+        			
         			scan.setTargettilePosition(tp);
         			Request r = new Request(null, scan);
-        			requests.put(tp.getX() + "scan" + tp.getY(), r); //TODO better id 
-        			//System.out.println("SCAN REQUESTED ON" + tp.getX() + tp.getY());
+        			requests.putIfAbsent(tp.getX() + "sc" + tp.getY(), r); //TODO better id 
+        			System.out.println("SCAN REQUESTED ON" + tp.getX() + tp.getY() + " Frame: "+ frameCount);
+    				}
     			}
-    				//duration:10, i have no idea what that means, let's say 300 frames
     			//System.out.println("LURKER att:" + enemy.isAttacking() + " VISIBLE: " + enemy.isVisible() + " TaRGETable:" + enemy.isTargetable());
     			
     		}
     		//DUNNO LOL
+    		/*
     		if (enemy.isAttacking() && !enemy.isTargetable()) {
     			Command scan = new Command(CommandType.SCAN);
     			TilePosition tp = enemy.getTilePosition();
@@ -769,6 +751,7 @@ public class Main extends DefaultBWListener {
     			System.out.println("SCAN REQUESTED ON" + tp.getX() + tp.getY());
     			
     		}
+    		*/
     	}
     }
     

@@ -73,6 +73,25 @@ public class MapUtil {
 		return weakest;
 	}
 	
+	
+	//Costly method
+	public static Set<Position> getPositionsInRadius(Position point, int radius) {
+		int x = point.getX();
+		int y = point.getY();
+		HashSet<Position> positionsInRadius = new HashSet<Position>();
+		for  (int i = x-radius; i<=x+radius; i++) {
+			for (int j = y-radius; j<=y+radius ; j++) {
+				double dist = Math.sqrt((double)((Math.abs(x-i))^2 + Math.abs(y-j)^2));
+				if (dist <=radius) {
+					Position check = new Position(i,j);
+					positionsInRadius.add(check);
+				};
+			}
+			
+		}
+		return positionsInRadius;
+	}
+	
 	/*
 	public static Unit getNearestAttackableUnit(Collection<Unit> units, Unit attacker) {
 		int dist = 0;
