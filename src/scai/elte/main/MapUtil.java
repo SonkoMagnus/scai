@@ -13,15 +13,11 @@ import scai.elte.command.UnitManager;
 public class MapUtil {
 	
 
-	public static Set<Unit> getUnitsInRegion (Region region) {
-		return getUnitsInRegion(region, false);
-	}
 	
-	public static Set<Unit> getUnitsInRegion (Region region, boolean onlyEnemies) {
+	public static Set<Unit> getUnitsInRegion (Region region) {
 		Set<Unit> unitsInRegion = new HashSet<Unit>();
 		for (UnitManager um : Main.unitManagers.values()) {
 			Unit unit = um.getUnit();
-			
 			Position closestBorder = region.getPolygon().getNearestPoint(unit.getPosition());
 			
 			if (region.getCenter().getDistance(unit.getPosition()) < region.getCenter().getDistance(closestBorder)) {

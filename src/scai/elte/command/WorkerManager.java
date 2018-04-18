@@ -19,12 +19,9 @@ public class WorkerManager extends UnitManager {
 	private TilePosition targetTile;
 	private Unit targetUnit;
 	private UnitType buildType;
-	
 	private WorkerRole prevRole;
 	
-	//Region def = MapUtil.getRegionOfUnit(r.getRequestingUnit());
-	//Set<Unit> unitsInRegion = MapUtil.getUnitsInRegion(def);
-
+	
 	public WorkerManager(Unit unit) {
 		super(unit);
 	}
@@ -107,16 +104,21 @@ public class WorkerManager extends UnitManager {
 			}
 		} else if (role == WorkerRole.MILITIA) {
 			if (worker.getLastCommand().getUnitCommandType() != UnitCommandType.Attack_Move) {
-				/*
+				//TODO: make this more efficient, low priority
 				Region def = MapUtil.getRegionOfUnit(worker);
-				HashSet<Unit> enemies = (HashSet<Unit>) MapUtil.getUnxitsInRegion(def, true);
-				System.out.println("esize:" + enemies.size());
-				for (Unit e : enemies) {
-					if (e.getPlayer() != 
+				HashSet<Unit> enemies = new HashSet<Unit>();
+				for (Unit e : Main.enemyUnits) {
+					if (MapUtil.getRegionOfUnit(e) == def) {
+						enemies.add(e);
+					}
 				}
-				Unit enemy = MapUtil.getWeakestUnit(MapUtil.getUnitsInRegion(def, true));
+				Unit enemy = MapUtil.getWeakestUnit(enemies);
+				if (enemy!= null) {
 				worker.attack(enemy);
-				*/
+				} else { 
+					setRole(prevRole);
+				}
+
     		}
     		
 		}

@@ -1,18 +1,13 @@
+- Manager for command center, barracks
 - SCOUTING..
-- Improve build algorithm:
-	- Reserve default comsat space(s)?
+- Improve builder behaviour: Sometimes builder derps out
 - Terrain analyze, identify chokes, gating... walling
 	- Naturalchoke identify
-- Scan
-	- cooldown, keep track of scanned tiles - heatmap?
-
-
-
-	
-- Adjust targetworkers after condition
-
-- Building algorithm: exact place, around some spot
+- Militia
+	- Proper deassignment
 - Base/expansion management
-
-- Neural network: Modifies build order dynamically, alters squad composition, and targeting
 - Squads:
+
+Adaptive strategy
+	- Adjust targetworkers after condition
+- Neural network: Modifies build order dynamically, alters squad composition, and targeting
