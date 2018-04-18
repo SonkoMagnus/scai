@@ -313,10 +313,6 @@ public class Main extends DefaultBWListener {
 
 	@Override
 	public void onUnitDestroy(Unit unit) {
-    	if (unit.getType() == UnitType.Spell_Scanner_Sweep && unit.getPlayer() == self) {
-    		System.out.println("scanned diede:" + frameCount);
-    	}
-		
 		if (unit.getType().isWorker() && unit.getPlayer() == self) {
 		workerManagerIDs.remove(Integer.valueOf(unit.getID()));
 		}
@@ -408,25 +404,12 @@ public class Main extends DefaultBWListener {
         	enemyUnits.remove(unit);
     	}
     }
-    
-    public boolean scanned = false;
-    Unit scan = null;
-    
+        
     @Override
     public void onUnitDiscover(Unit unit) {
     	if (unit.getType() == UnitType.Spell_Scanner_Sweep && unit.getPlayer() == self) {
-    		System.out.println("scanned spawn:" + frameCount);
-    		scanned = true;
-    		scan = unit;
-    		Set<Position> sc = MapUtil.getPositionsInRadius(unit.getPosition(), 320);
     		scannerPositions.put(unit.getPosition(), 262);
-    		/*
-    		for (Position p : sc) {
-    		scannedPositions.put(p, 262); 
-    		}
-    		*/
     	}
-    	//if unit.getPlayer() //ENemy unit management
     }
     
     
@@ -447,23 +430,10 @@ public class Main extends DefaultBWListener {
         statusMessages.append("Requests:" + requests.size()+ "\n");
         statusMessages.append("APM:" + game.getAPM());
         
-        //self.
-        //System.out.println(self.sightRange(UnitType.Spell_Scanner_Sweep));
-        if (scanned) {
-        	//System.out.println(scan.getRemoveTimer());
-        	//scan.get
-        	game.drawCircle(Enum.Map, scan.getX(), scan.getY(), 320, Color.Red);
-        	//tiles in radius?
-        	
-        	//game.drawBox(Enum.Map, scan.getLeft()+160, scan.getTop()+160, scan.getRight()+160, scan.getBottom()+160, Color.Cyan);
-        	//
-        }
-        
         updateScannedPositions();
         
         for (BasePlanItem bpi : buildOrder.getImproveOrder()) {
         	if (bpi.getExecutorId() == null || !unitManagers.containsKey(bpi.getExecutorId())) {
-        	//	System.out.println("Upgradeloop" + bpi.getExecutorId());
         	if (bpi instanceof TechItem) {
         		TechType tech = ((TechItem) bpi).getTechType();
         		
@@ -475,13 +445,6 @@ public class Main extends DefaultBWListener {
             				bpi.setExecutorId(bm.getUnit().getID());
             				break;
             			};
-            			/*
-            		Integer buildingID = unitIDs.get(tech.whatResearches()).iterator().next();
-            		if (unitManagers.get(buildingID).getUnit().canResearch(tech)) {
-            			((BuildingManager)unitManagers
-            			break;
-            		}
-            		*/
             		}
             	} else if (self.hasResearched(tech)) {
             		buildOrder.getImproveOrder().remove(bpi);   
@@ -491,19 +454,12 @@ public class Main extends DefaultBWListener {
         		UpgradeType upg = ((UpgradeItem) bpi).getUpgradeType();
         		if (game.canUpgrade(upg) && upg.gasPrice() < availableGas && upg.mineralPrice() < availableMinerals) {
             		if (unitIDs.get(upg.whatUpgrades()) != null) {
-            		//Integer buildingID = unitIDs.get(upg.whatUpgrades()).iterator().next();
             			BuildingManager bm = (BuildingManager) getUpgrader(upg);
             		if (bm != null) {
             			bm.getImproveList().add(bpi);
             			bpi.setExecutorId(bm.getUnit().getID());
             			break;
             		}
-            		/*
-            		if (unitManagers.get(buildingID).getUnit().canUpgrade(upg)) {
-            			((BuildingManager)unitManagers.get(buildingID)) .getImproveList().add(bpi);
-            			break;
-            		}
-            		*/
             		}
             	} else if (self.getUpgradeLevel(upg) >= ((UpgradeItem)bpi).getLevel()) { //already upgraded
             		buildOrder.getImproveOrder().remove(bpi);   
@@ -555,7 +511,6 @@ public class Main extends DefaultBWListener {
     		requests.remove("supplyExtend");
     	}
     	
-    	
     	//Check if we need another supply depot, after the initial build order is fulfilled
     	if (requests.get("supplyExtend") != null && requests.get("supplyExtend").getRequestStatus() == RequestStatus.NEW) {
     		buildOrder.addItem(UnitType.Terran_Supply_Depot, 0, 1);
@@ -605,8 +560,8 @@ public class Main extends DefaultBWListener {
 						if (armyAvailable) {
 							// TODO
 						} else {
-							//System.out.println("Assigning workers to militia");
-							//assignWorkerRoles(workersInRegion, WorkerRole.MILITIA);
+//							System.out.println("Assigning workers to militia");
+	//						assignWorkerRoles(workersInRegion, WorkerRole.MILITIA);
 						}
 					}
 				}
