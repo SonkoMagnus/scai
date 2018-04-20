@@ -1,6 +1,7 @@
 - Manager for command center, barracks
 - SCOUTING..
 - Improve builder behaviour: Sometimes builder derps out
+	- Ask units to move out of the way
 - Terrain analyze, identify chokes, gating... walling
 	- Naturalchoke identify
 - Militia
@@ -11,3 +12,4 @@
 Adaptive strategy
 	- Adjust targetworkers after condition
 - Neural network: Modifies build order dynamically, alters squad composition, and targeting
+- Unit target numbers: priority?

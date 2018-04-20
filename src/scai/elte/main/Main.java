@@ -48,8 +48,6 @@ import scai.elte.strategy.plan.TwoRaxFE;
 
 public class Main extends DefaultBWListener {
 	
-	public boolean DEBUGMODE = true;
-
     private Mirror mirror = new Mirror();
 
     public static Game game;
@@ -91,34 +89,22 @@ public class Main extends DefaultBWListener {
     /**
      * The maximum number of workers that is to be constructed.
      */
-	public int maximumWorkers = 45;
-	
+	//public int maximumWorkers = 45;
 	public static int frameCount = 0;
-	
     /**
      * Keeps track of how many units of each unit type the player has.
      */
     public HashMap<UnitType, Integer> unitCounts = new HashMap<UnitType, Integer>();
-    
     /**
      * Keeps track of how many units are in production
      */
     public HashMap<UnitType, Integer> unitsInProduction = new HashMap<UnitType, Integer>();
-    
-    
     /**
      * Build order, buildings, addons, tech, upgrade
      */
     public static BuildOrder buildOrder = new BuildOrder();
-    
     public static HashMap<Integer, UnitManager> unitManagers = new HashMap<Integer, UnitManager>();
-    
     public static HashMap<Position, Integer> scannerPositions = new HashMap<Position, Integer>();
-    
-    public HashMap<UnitType, HashSet<Integer>> unitIDs = new HashMap<UnitType, HashSet<Integer>>(); //IDs by unit type, for quick access
-    Random rand;
-    public ArrayList<Integer> workerManagerIDs = new ArrayList<Integer>() ;
-    
     public static int supplyUsedActual;
     public static Integer availableMinerals;
     public static Integer availableGas;
@@ -130,6 +116,9 @@ public class Main extends DefaultBWListener {
     public static Set<BaseLocation> baseLocations = new HashSet<BaseLocation>();
     public static Set<Region> baseRegions = new HashSet<Region>();
     
+    public HashMap<UnitType, ArrayList<Integer>> unitManagerIDs = new HashMap<UnitType, ArrayList<Integer>>(); //IDs by unit type, for quick access
+    public HashMap<UnitType, Integer> targetUnitNumbers = new HashMap<UnitType, Integer>(); //Unit goals 
+    Random rand;
     BaseLocation home;
     BaseLocation naturalExpansion;
     ArrayList<Chokepoint> chokes; 
@@ -150,17 +139,6 @@ public class Main extends DefaultBWListener {
         }
         	
         }
-    	/*
-    	if (myUnit.getType() == UnitType.Terran_Command_Center) {
-    		HashSet<TilePosition> asdf = getTilesForBuilding(myUnit.getPosition(), UnitType.Terran_Command_Center);
-    		System.out.println(asdf.size());
-    		
-    	}
-    	*/
-        //plannedPositions.add(arg0)
-    	//cc1 = new Position (tp.toPosition().getX()+128, tp.toPosition().getY()+32); 
-    	//cc2 = new Position (tp.toPosition().getX()+194, tp.toPosition().getY()+96);
-        
         countAllUnits();
         for (BuildOrderItem boi : buildOrder.buildOrderList) {
         	if (boi.status == BuildOrderItemStatus.BUILD_PROCESS_STARTED) {
@@ -188,7 +166,6 @@ public class Main extends DefaultBWListener {
     			buildingTiles.add(tp);
     		}
     	}
-    	
     	return buildingTiles;
     }
     
@@ -204,13 +181,11 @@ public class Main extends DefaultBWListener {
     		unitManagers.putIfAbsent(unit.getID(), new BuildingManager(unit));
     	} else if (unit.getType() == UnitType.Terran_SCV) {
     		unitManagers.putIfAbsent(unit.getID(), new WorkerManager(unit, WorkerRole.MINERAL));
-    		workerManagerIDs.add(unit.getID());
     	}  else {
     		unitManagers.putIfAbsent(unit.getID(), new UnitManager(unit));
     	}
-    	
-    	unitIDs.putIfAbsent(unit.getType(), new HashSet<Integer>());
-    	unitIDs.get(unit.getType()).add(unit.getID());
+    	unitManagerIDs.putIfAbsent(unit.getType(), new ArrayList<Integer>());
+    	unitManagerIDs.get(unit.getType()).add(unit.getID());
     }
 
     public void countAllUnits() {
@@ -231,34 +206,19 @@ public class Main extends DefaultBWListener {
 	        	}
 	        	if (myUnit.getType().isBuilding()) {
 	        		List<UnitType> trimList = myUnit.getTrainingQueue();
-	        		
 	        		if (trimList.size() > 0 ) {
 	        			trimList.remove(0);
 	        		}
-	        		
 	        		for (UnitType ut : trimList) {		
 	        			
 	        			if(!unitsInProduction.containsKey(ut)) 
 	        				unitsInProduction.put(ut, 1);
-	        			
 	    	        	else
 	    	        		unitsInProduction.put(ut, unitsInProduction.get(ut)+1);
-	    	        			
 	        		}
 	        	}
-	        	
 	        }
      }
-    
-    
-    public int count(UnitType type)
-    {
-    	Integer result = unitCounts.get(type);
-    	if(result == null)
-    		return 0;
-    	else
-    		return result;
-    }
     
     @Override
     public void onUnitMorph(Unit unit) {
@@ -306,13 +266,6 @@ public class Main extends DefaultBWListener {
         //System.out.println("Analyzing map...");
         BWTA.analyze();
         chokes = (ArrayList<Chokepoint>) BWTA.getChokepoints();
-        /*
-        workerGroups.add(mineralWorkers);
-        workerGroups.add(gasWorkers);
-        workerGroups.add(builders);
-        workerGroups.add(militia);
-        workerGroups.add(scouts);
-        */
         for(BaseLocation baseLocation : BWTA.getBaseLocations()){
         	baseLocations.add(baseLocation);
         	baseRegions.add(baseLocation.getRegion());
@@ -321,7 +274,6 @@ public class Main extends DefaultBWListener {
 
         	}
         }
-        
 
         double minDist = Double.MAX_VALUE;
         for (BaseLocation bl : baseLocations) {
@@ -331,16 +283,16 @@ public class Main extends DefaultBWListener {
         	}
         }  
         
-        
      	for (Unit unit : self.getUnits()) {
      		assignUnitManager(unit);
      		if (unit.getType() == UnitType.Terran_SCV) {
-     			//assignWorker(unit, mineralWorkers);
      			assignWorkerRole(unit, WorkerRole.MINERAL);
      		}
      	}
-        
         buildOrder = new TwoRaxFE(naturalExpansion.getTilePosition());
+        //Could be part of the build order?
+        targetUnitNumbers.putIfAbsent(UnitType.Terran_Marine, 30);
+        targetUnitNumbers.putIfAbsent(UnitType.Terran_SCV, 30);
     	}
     	catch (Exception ex) {
     		ex.printStackTrace();
@@ -349,10 +301,10 @@ public class Main extends DefaultBWListener {
 
 	@Override
 	public void onUnitDestroy(Unit unit) {
-		if (unit.getType().isWorker() && unit.getPlayer() == self) {
-		workerManagerIDs.remove(Integer.valueOf(unit.getID()));
-		}
+		if (unit.getPlayer() == self && !unit.getType().isNeutral()) {
+		unitManagerIDs.get(unit.getType()).remove(Integer.valueOf(unit.getID()));
 		unitManagers.remove(unit.getID());
+		}
 	}
     
     @Override
@@ -363,7 +315,6 @@ public class Main extends DefaultBWListener {
         for (BuildOrderItem boi : buildOrder.buildOrderList) {
         	if (boi.status == BuildOrderItemStatus.UNDER_CONSTRUCTION) {
         		if (unit.getType() == boi.getUnitType()) {
-        			System.out.println("Setting " + boi.getUnitType() + " to DONE");
         			boi.status = BuildOrderItemStatus.DONE;
 				    int i = unit.getTilePosition().getX();
 				    int j = unit.getTilePosition().getY();
@@ -379,7 +330,6 @@ public class Main extends DefaultBWListener {
         if (unit.getType() == UnitType.Terran_Refinery) {
         	requests.put(unit.getID() + "_1", new Request(unit, new Command(CommandType.GAS_WORKER)));
         	requests.put(unit.getID() + "_2", new Request(unit, new Command(CommandType.GAS_WORKER)));
-        	
         }
     }
     
@@ -398,9 +348,7 @@ public class Main extends DefaultBWListener {
     
     public Unit getWorkerFromRole(WorkerRole prevRole, WorkerRole role) {
     	//assign random
-    	ArrayList<Integer> randomIds = workerManagerIDs;
-    	//System.out.println("Worker manager ids:" + randomIds);
-    	//System.out.println("WTF:" + unitManagers.keySet().containsAll(workerManagerIDs));
+    	ArrayList<Integer> randomIds = unitManagerIDs.get(UnitType.Terran_SCV);
     	while (randomIds.size() > 0) {
     	Integer d = rand.nextInt(randomIds.size());
     	Integer wmid = randomIds.get(d);
@@ -414,23 +362,14 @@ public class Main extends DefaultBWListener {
     	}
     	return null;
     }
-  
-
-    public void trainUnit(Unit producer, UnitType unitType) {
-    	if (producer.getTrainingQueue().size() < 1) {
-    		producer.train(unitType);
-    	}
-    }
-    
+   
     @Override
     public void onUnitShow(Unit unit) {
     	if (unit.getPlayer() != self && !unit.getType().isNeutral()) {
-    	System.out.println("OMG IT'S A ENEMY"+ unit.getType()  + " IT HAZ A ID:" + unit.getID());
-    		game.setLocalSpeed(40);
+    		//System.out.println("OMG IT'S A ENEMY"+ unit.getType()  + " IT HAZ A ID:" + unit.getID());
+    		//game.setLocalSpeed(40);
     		enemyUnits.add(unit);
     	}
-    	
-    	
     	
     }
     
@@ -475,7 +414,7 @@ public class Main extends DefaultBWListener {
         		TechType tech = ((TechItem) bpi).getTechType();
         		
             	if (game.canResearch(tech) && tech.gasPrice() < availableGas && tech.mineralPrice() < availableMinerals) {
-            		if (unitIDs.get(tech.whatResearches()) != null) {
+            		if (unitManagerIDs.get(tech.whatResearches()) != null) {
             			BuildingManager bm = (BuildingManager) getResearcher(tech);
             			if (bm!= null) {
             				bm.getImproveList().add(bpi);
@@ -490,7 +429,7 @@ public class Main extends DefaultBWListener {
         	} else if (bpi instanceof UpgradeItem) {
         		UpgradeType upg = ((UpgradeItem) bpi).getUpgradeType();
         		if (game.canUpgrade(upg) && upg.gasPrice() < availableGas && upg.mineralPrice() < availableMinerals) {
-            		if (unitIDs.get(upg.whatUpgrades()) != null) {
+            		if (unitManagerIDs.get(upg.whatUpgrades()) != null) {
             			BuildingManager bm = (BuildingManager) getUpgrader(upg);
             		if (bm != null) {
             			bm.getImproveList().add(bpi);
@@ -509,8 +448,6 @@ public class Main extends DefaultBWListener {
     	
         //Verify/debug
         for (TilePosition c : plannedPositions) {
-        	
-        	
         	game.drawBox(Enum.Map, c.toPosition().getX(), c.toPosition().getY(), c.toPosition().getX()+16, c.toPosition().getY()+16, Color.Yellow, true);
         }
         /*
@@ -539,10 +476,7 @@ public class Main extends DefaultBWListener {
         }
         //end debug
         */
-	   	int workersInProduction = 0;
-    	if (unitsInProduction.get(UnitType.Terran_SCV) != null) {
-    		workersInProduction = unitsInProduction.get(UnitType.Terran_SCV);
-    	}
+
     	
     	
 
@@ -614,20 +548,13 @@ public class Main extends DefaultBWListener {
 						reservedGas = reservedGas + buildingType.gasPrice();
 						boi.status = BuildOrderItemStatus.IN_QUEUE;
 					}
-					// Periodically check for false positives - this can occur after failed builds
-					// (occupied place, etc) - TODO: remove 
-/*
-					if (frameCount % 250 == 0 && boi.status == BuildOrderItemStatus.IN_QUEUE && boi.gotBuilder) {
-						boi.gotBuilder = false;
-					}
-*/
-					if (boi.status == BuildOrderItemStatus.IN_QUEUE
+				if (boi.status == BuildOrderItemStatus.IN_QUEUE
 							&& (self.minerals() - reservedMineralsInQueue) >= buildingType.mineralPrice()
 							&& self.gas() - reservedGasInQueue >= buildingType.gasPrice()
 							&& game.canMake(buildingType)) {
 						if (buildingType.isAddon()) {
-							System.out.println("Addon...");
-							if (unitIDs.get(buildingType.whatBuilds().first) != null) {
+							//System.out.println("Addon...");
+							if (unitManagerIDs.get(buildingType.whatBuilds().first) != null) {
 								BuildingManager addonBuilder = ((BuildingManager) getAddonBuilder(buildingType));
 								if (addonBuilder != null) {
 									addonBuilder.setAddon(new Pair<>(buildingType, false)); 
@@ -668,36 +595,22 @@ public class Main extends DefaultBWListener {
 				}
 			}
 
-    	//The UnitManager loop will eventually replace the myUnit loop
     	for (Integer i : unitManagers.keySet()) {
     		unitManagers.get(i).operate();
     	}
 
-    	int b = workerCount + workersInProduction;
-    		
-        for (Unit myUnit : self.getUnits()) {
+    	
+    	//For every unit target, get a producer building, and train unit TODO maybe importance of different units?
+    	trainRequiredUnits();
+    	requestScanIfNeeded();
+        
+    	for (Unit myUnit : self.getUnits()) {
         	game.drawTextMap(myUnit.getPosition().getX(), myUnit.getPosition().getY(), "ID:" + myUnit.getID());
-        	//game.drawTextMap(myUnit.getPosition().getX(), myUnit.getPosition().getY(), myUnit.getOrder().toString());
-        	//game.drawLineMap(myUnit.getPosition().getX(), myUnit.getPosition().getY(), myUnit.getOrderTargetPosition().getX(),
-        	
-        	
-        	
-        	//if there's enough minerals, train an SCV        	
-            if (myUnit.getType() == UnitType.Terran_Command_Center && availableMinerals >= 50 && b < targetWorkers) { //TODO CC manager    	
-            	trainUnit(myUnit, UnitType.Terran_SCV); 
-            }
-            
-            if (myUnit.getType() == UnitType.Terran_Barracks && availableMinerals >=50) {
-            	trainUnit(myUnit, UnitType.Terran_Marine);
-            }
         }
-     //  game.drawBoxMap(cc1,cc2,Color.Red);
 
-        game.drawTextScreen(10, 25, statusMessages.toString());
+
+        game.drawTextScreen(10, 25, statusMessages.toString());        
         
-        
-        
-        requestScanIfNeeded();
 
     	} catch (Exception e) {
     		e.printStackTrace();
@@ -706,6 +619,27 @@ public class Main extends DefaultBWListener {
 
     public static void main(String[] args) {
         new Main().run();
+    }
+    
+    public void trainRequiredUnits() {
+    	for (UnitType ut : targetUnitNumbers.keySet()) {
+    		UnitType producer = ut.whatBuilds().first;
+    		int numProducers = unitCounts.getOrDefault(producer,0);
+    		int targetNumber = targetUnitNumbers.get(ut);
+    		int inProduction = unitsInProduction.getOrDefault(ut, 0);
+    		if (numProducers != 0 && availableMinerals >= ut.mineralPrice() && availableGas >= ut.gasPrice() && unitCounts.getOrDefault(ut,0) < targetNumber + inProduction) {
+    			for (Integer i = inProduction; i < targetNumber + inProduction ; i++) {
+    				for (Integer pId : unitManagerIDs.get(producer)) {
+        				UnitManager prodManager = unitManagers.get(pId);
+        				if ((unitManagers.get(pId).getUnit().getTrainingQueue().size() < 1)) {
+        					prodManager.trainUnit(prodManager.getUnit(), ut);
+        					break;
+        				}
+        			}
+    				
+    			}
+    		}
+    	}
     }
     
     public void requestScanIfNeeded() {
@@ -746,8 +680,8 @@ public class Main extends DefaultBWListener {
     
     //Convenience method for getting a "random" available upgrader
     public UnitManager getUpgrader(UpgradeType upg) {
-    	if (unitIDs.get(upg.whatUpgrades()) != null) {
-    		for (Integer buildingID : unitIDs.get(upg.whatUpgrades())) {
+    	if (unitManagerIDs.get(upg.whatUpgrades()) != null) {
+    		for (Integer buildingID : unitManagerIDs.get(upg.whatUpgrades())) {
     			if (unitManagers.get(buildingID).getUnit().canUpgrade(upg)) {
 					return unitManagers.get(buildingID);
 				}    			
@@ -759,8 +693,8 @@ public class Main extends DefaultBWListener {
     
     //Convenience method for getting a "random" available researcher
     public UnitManager getResearcher(TechType tech) {
-    	if (unitIDs.get(tech.whatResearches()) != null) {
-    		for (Integer buildingID : unitIDs.get(tech.whatResearches())) {
+    	if (unitManagerIDs.get(tech.whatResearches()) != null) {
+    		for (Integer buildingID : unitManagerIDs.get(tech.whatResearches())) {
     			if (unitManagers.get(buildingID).getUnit().canResearch(tech)) {
 					return unitManagers.get(buildingID);
 				}
@@ -773,8 +707,8 @@ public class Main extends DefaultBWListener {
   //Convenience method for getting a "random" available addon builder
 	public UnitManager getAddonBuilder(UnitType addonType) {
 		//System.out.println("ADDON");
-		if (unitIDs.get(addonType.whatBuilds().first) != null) {
-			for (Integer buildingID : unitIDs.get(addonType.whatBuilds().first)) {
+		if (unitManagerIDs.get(addonType.whatBuilds().first) != null) {
+			for (Integer buildingID : unitManagerIDs.get(addonType.whatBuilds().first)) {
 				if (unitManagers.get(buildingID).getUnit().canBuild(addonType)) {
 					return unitManagers.get(buildingID);
 				}

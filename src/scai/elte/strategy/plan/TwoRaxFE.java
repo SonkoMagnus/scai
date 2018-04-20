@@ -22,7 +22,7 @@ public class TwoRaxFE extends BuildOrder {
 	
 	public TwoRaxFE(TilePosition natural) {
 		super();
-		/*
+		
 		addItem(UnitType.Terran_Supply_Depot, 18, 1);	
 		addItem(UnitType.Terran_Barracks, 22, 1);	
 		addItem(UnitType.Terran_Barracks, 26, 1);
@@ -36,7 +36,7 @@ public class TwoRaxFE extends BuildOrder {
 		addItem(UnitType.Terran_Comsat_Station, 40, 1);
 		
 		this.setSupplyExecuted(56);
-		*/
+		
 	}
 
 }

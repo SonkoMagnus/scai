@@ -7,6 +7,7 @@ import java.util.Set;
 import bwapi.Pair;
 import bwapi.Position;
 import bwapi.Unit;
+import bwapi.UnitType;
 import scai.elte.main.Util;
 
 public class UnitManager {
@@ -50,11 +51,11 @@ public class UnitManager {
 	    return Util.sumPosition(ownPosition, new Position((int)(sumAll.first / vectors.size()),(int) (sumAll.second / vectors.size())));
 	}
 	
-	/*
-	public void executeCommand(Command command) {
-		
-	}
-	*/
+    public void trainUnit(Unit producer, UnitType unitType) {
+    	if (producer.getTrainingQueue().size() < 1) {
+    		producer.train(unitType);
+    	}
+    }
 	//Main "deciding" loop
 	public void operate () {
 		
