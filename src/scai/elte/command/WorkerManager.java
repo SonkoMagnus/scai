@@ -1,16 +1,20 @@
 package scai.elte.command;
 
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 
 import bwapi.Order;
 import bwapi.TilePosition;
 import bwapi.Unit;
 import bwapi.UnitCommandType;
 import bwapi.UnitType;
+import bwta.BWTA;
 import bwta.Region;
 import scai.elte.command.Request.RequestType;
 import scai.elte.main.Main;
 import scai.elte.main.MapUtil;
+import scai.elte.main.ScoutInfo;
 
 public class WorkerManager extends UnitManager {
 	
@@ -121,19 +125,44 @@ public class WorkerManager extends UnitManager {
 
     		}
     		
+		} else if (role == WorkerRole.SCOUT) {
+			if (worker.isBraking() || !worker.isMoving()) {
+
+				int maxImp = Integer.MIN_VALUE;
+				for (ScoutInfo sc : Main.scoutHeatMap) {
+					if (sc.getImportance() > maxImp) {
+						maxImp = sc.getImportance();
+					}
+				}
+				System.out.println("MAXIMP" + maxImp);
+				TilePosition moveTile = null;
+				double minDist = Integer.MAX_VALUE;
+				int d = 0;
+				for (ScoutInfo sc : Main.scoutHeatMap) {
+					if (sc.isWalkable() && sc.getImportance() == maxImp) {
+						double dist = worker.getDistance(sc.getTile().toPosition());
+						if (dist<minDist) {
+							minDist = dist;
+							moveTile = sc.getTile();
+						}
+				
+					}
+				}
+								
+				//System.out.println("Scouting worker target pos:" + moveTile.toPosition());
+				worker.move(moveTile.toPosition());
+			
+			}
+
 		}
 		}
 		if (changeRole) {
 			System.out.println("Current:" + role + " prev:" + prevRole);
 			role = prevRole;
 		}
-		// worker.getTarget().getTilePosition(); //location to put
+
 	}
 
-	
-
-	//builder.build(boi.getUnitType(), boi.getTilePosition()); //work with command
-	
 	public WorkerRole getRole() {
 		return role;
 	}

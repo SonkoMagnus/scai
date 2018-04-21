@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import bwapi.Position;
+import bwapi.TilePosition;
 import bwapi.Unit;
 import bwta.Region;
 import scai.elte.command.UnitManager;
@@ -37,6 +38,18 @@ public class MapUtil {
 			}
 		}
 		return unitRegion;
+	}
+	
+	public static Region getRegionOfTile(TilePosition tile){
+		Region tileRegion = null;
+		for (Region r : Main.baseRegions) {
+			Position closestBorder = r.getPolygon().getNearestPoint(tile.toPosition());
+			
+			if (r.getCenter().getDistance(tile.toPosition()) < r.getCenter().getDistance(closestBorder)) {
+				tileRegion = r;
+			}
+		}
+		return tileRegion;
 	}
 	
 	

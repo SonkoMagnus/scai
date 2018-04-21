@@ -4,12 +4,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 
-import bwapi.Color;
 import bwapi.DefaultBWListener;
 import bwapi.Game;
 import bwapi.Mirror;
@@ -21,7 +23,6 @@ import bwapi.TilePosition;
 import bwapi.Unit;
 import bwapi.UnitType;
 import bwapi.UpgradeType;
-import bwapi.CoordinateType.Enum;
 import bwta.BWTA;
 import bwta.BaseLocation;
 import bwta.Chokepoint;
@@ -38,6 +39,7 @@ import scai.elte.command.RequestStatus;
 import scai.elte.command.UnitManager;
 import scai.elte.command.WorkerManager;
 import scai.elte.command.WorkerManager.WorkerRole;
+import scai.elte.main.ScoutInfo.TileType;
 import scai.elte.strategy.BasePlanItem;
 import scai.elte.strategy.BuildOrder;
 import scai.elte.strategy.BuildOrderItem;
@@ -237,17 +239,10 @@ public class Main extends DefaultBWListener {
     	
     }
     
-    public void updateScannedPositions () { 
-    	for (Position p : scannerPositions.keySet()) {
-    		int age = scannerPositions.get(p);
-    		if (age>0) {
-    			age--;
-    			scannerPositions.put(p, age);
-    		} else {
-    			scannerPositions.remove(p);
-    		}
-    	}
-    }
+
+    
+
+    public static TreeSet<ScoutInfo> scoutHeatMap;
 
     @Override
     public void onStart() {
@@ -259,19 +254,25 @@ public class Main extends DefaultBWListener {
      	game.enableFlag(1); //single cheats seldom work
      	mapUtil = new MapUtil();   	
      	countAllUnits();
-
+     	
+     
+     	//TilePosition bt;
+     	//game.isVisible(position)
+     	
      	
         //Use BWTA to analyze map
         //This may take a few minutes if the map is processed first time!
-        //System.out.println("Analyzing map...");
+        System.out.println("Analyzing map...");
         BWTA.analyze();
+        
         chokes = (ArrayList<Chokepoint>) BWTA.getChokepoints();
         for(BaseLocation baseLocation : BWTA.getBaseLocations()){
         	baseLocations.add(baseLocation);
+        	
+        	
         	baseRegions.add(baseLocation.getRegion());
         	if (baseLocation.getTilePosition().equals(self.getStartLocation())) {
         		home = baseLocation;
-
         	}
         }
 
@@ -280,8 +281,47 @@ public class Main extends DefaultBWListener {
         	if (!bl.equals(home) && bl.getGroundDistance(home) < minDist) {
         		minDist = home.getGroundDistance(bl);
         		naturalExpansion = bl;
+        		
+        	//	bl.getRegion().
+        		
         	}
         }  
+        
+
+     	scoutHeatMap = new  TreeSet<ScoutInfo>(new ScoutInfoComparator());
+     	//Build heatmap for exploration
+     	for (int i=0; i<game.mapWidth(); i++) {
+     		for (int j=0; j<game.mapHeight();j++) {
+
+     			TilePosition tp = new TilePosition(i,j);
+     			Region r = MapUtil.getRegionOfTile(tp);
+     			ScoutInfo si;
+     			boolean start = false;
+     			if (baseRegions.contains(r)) {
+     				for (BaseLocation bl : r.getBaseLocations()) {
+     					if (bl.isStartLocation()) {
+     						start = true;
+     						break;
+     					}
+     				}
+     				if (start) {
+     					si = new ScoutInfo(tp, TileType.START_LOC, 3, game.isWalkable(tp.toWalkPosition()));
+     				} else {
+     					si = new ScoutInfo(tp, TileType.BASE_LOC, 2, game.isWalkable(tp.toWalkPosition()));
+     				}
+     			} else {
+     				si = new ScoutInfo(tp, TileType.NORMAL, 1, game.isWalkable(tp.toWalkPosition()));
+     				
+     			}
+     			//System.out.println(scoutHeatMap.contains(si));
+     			scoutHeatMap.add(si);
+     			//System.out.println(scoutHeatMap.size());
+     		}
+     	}
+     	
+
+        
+        
         
      	for (Unit unit : self.getUnits()) {
      		assignUnitManager(unit);
@@ -292,7 +332,7 @@ public class Main extends DefaultBWListener {
         buildOrder = new TwoRaxFE(naturalExpansion.getTilePosition());
         //Could be part of the build order?
         targetUnitNumbers.putIfAbsent(UnitType.Terran_Marine, 30);
-        targetUnitNumbers.putIfAbsent(UnitType.Terran_SCV, 30);
+        targetUnitNumbers.putIfAbsent(UnitType.Terran_SCV, 12);
     	}
     	catch (Exception ex) {
     		ex.printStackTrace();
@@ -387,10 +427,10 @@ public class Main extends DefaultBWListener {
     	}
     }
     
- Position cc1,cc2;
-    
+    boolean scout = false;
     @Override
     public void onFrame() {
+
     	try {
     	//Accounting
     	frameCount++;
@@ -407,6 +447,15 @@ public class Main extends DefaultBWListener {
         statusMessages.append("APM:" + game.getAPM());
         
         updateScannedPositions();
+        
+        ageHeatMap();
+        
+        if (!scout && unitCounts.get(UnitType.Terran_SCV) >= 6) {
+        	Integer rid = unitManagerIDs.get(UnitType.Terran_SCV).get(rand.nextInt(unitManagerIDs.get(UnitType.Terran_SCV).size())); //TODO "get random worker logic rework"
+        	Unit worker = unitManagers.get(rid).getUnit();
+        	assignWorkerRole(worker, WorkerRole.SCOUT);
+        	scout = true;
+        }
         
         for (BasePlanItem bpi : buildOrder.getImproveOrder()) {
         	if (bpi.getExecutorId() == null || !unitManagers.containsKey(bpi.getExecutorId())) {
@@ -445,12 +494,19 @@ public class Main extends DefaultBWListener {
         	
         }
         }
-    	
         //Verify/debug
+        
+        for (ScoutInfo sc : scoutHeatMap) {
+        	game.drawTextMap(sc.getTile().toPosition(), sc.getImportance().toString());
+        }
+        /*
+        
+        
         for (TilePosition c : plannedPositions) {
         	game.drawBox(Enum.Map, c.toPosition().getX(), c.toPosition().getY(), c.toPosition().getX()+16, c.toPosition().getY()+16, Color.Yellow, true);
         }
-        /*
+        
+        
         for (BaseLocation bl : baseLocations) {
     		
     		game.drawBox(Enum.Map, bl.getRegion().getCenter().getX(), bl.getRegion().getCenter().getY(), bl.getRegion().getCenter().getX()+10, 
@@ -461,20 +517,14 @@ public class Main extends DefaultBWListener {
     		}
     		
     	}
+        
         for (Chokepoint c : chokes) {
-        	//c.getRegions()
-        	//c.getSides() left top right bottom
+        	
         	game.drawBox(Enum.Map, c.getX(), c.getY(), c.getX()+10, c.getY()+10, Color.Yellow, true);
         	game.drawBox(Enum.Map, c.getSides().first.getX(), c.getSides().first.getY(), c.getSides().first.getX()+10, c.getSides().first.getY()+10, Color.Cyan, true);
         	game.drawBox(Enum.Map, c.getSides().second.getX(), c.getSides().second.getY(), c.getSides().second.getX()+10, c.getSides().second.getY()+10, Color.Cyan, true);
-            
-        	//game.drawBox(Enum.Screen, c.getX(), c.getY(), c.getX()+100, c.getY()+100, Color.Green, true);
-        	//game.drawBox(Enum.Mouse, c.getX(), c.getY(), c.getX()+100, c.getY()+100, Color.Cyan, true);
-        	c.getCenter();
-        	
-        //	game.drawTextMap(c.getCenter().getX(), c.getCenter().getY(), "choke center:" + c.getCenter());
         }
-        //end debug
+        
         */
 
     	
@@ -621,6 +671,57 @@ public class Main extends DefaultBWListener {
         new Main().run();
     }
     
+    public void ageHeatMap() {
+    	for (ScoutInfo sc : scoutHeatMap) {
+    		//scoutHeatMap.remove(sc);
+			int weight = 0;
+			if (game.isVisible(sc.getTile())) {
+				sc.setImportance(0);
+			} else {
+
+				if (sc.getType() == TileType.BASE_LOC) {
+					weight = 2;
+					// sc.setImportance(sc.getImportance()+2);
+				} else if (sc.getType() == TileType.START_LOC) {
+					weight = 3;
+					// sc.setImportance(sc.getImportance()+3);
+				} else if (sc.getType() == TileType.NORMAL) {
+					// sc.setImportance(sc.getImportance()+1);
+					weight = 1;
+				}
+				if (!game.isExplored(sc.getTile())) {
+					weight = weight * 2;
+				}
+				sc.setImportance(sc.getImportance() + weight);
+			}
+    		//scoutHeatMap.add(sc);
+    		
+    	}
+    	
+    	//Collections.sort(scutHeatMap);
+    	/*
+    	TreeSet<ScoutInfo> scoutHeatMapUpdate = new TreeSet<ScoutInfo>(new ScoutInfoComparator());
+    	 scoutHeatMapUpdate.addAll(scoutHeatMap);
+    	 scoutHeatMap.clear();
+    	// System.out.println("Updat siz:" + scoutHeatMapUpdate.size());
+    	 scoutHeatMap.addAll(scoutHeatMapUpdate);
+    	 */
+    	//scoutHeatMap
+    	//scoutHeatMap.addAll(scoutHeatMapUpdate);
+    }
+    
+    public void updateScannedPositions () { 
+    	for (Position p : scannerPositions.keySet()) {
+    		int age = scannerPositions.get(p);
+    		if (age>0) {
+    			age--;
+    			scannerPositions.put(p, age);
+    		} else {
+    			scannerPositions.remove(p);
+    		}
+    	}
+    }
+    
     public void trainRequiredUnits() {
     	for (UnitType ut : targetUnitNumbers.keySet()) {
     		UnitType producer = ut.whatBuilds().first;
@@ -649,32 +750,27 @@ public class Main extends DefaultBWListener {
     			if (enemy.isAttacking() && enemy.isBurrowed()) {
     				TilePosition tp = enemy.getTilePosition();
     				String key = tp.getX() + "sc" + tp.getY();
-    				System.out.println("Rkeyset:" + requests.keySet());
-    				System.out.println(key);
     				if (!requests.containsKey(key)) { 
     				Command scan = new Command(CommandType.SCAN);
         			
         			scan.setTargettilePosition(tp);
         			Request r = new Request(null, scan);
         			requests.putIfAbsent(tp.getX() + "sc" + tp.getY(), r); //TODO better id 
-        			System.out.println("SCAN REQUESTED ON" + tp.getX() + tp.getY() + " Frame: "+ frameCount);
+//        			System.out.println("SCAN REQUESTED ON" + tp.getX() + tp.getY() + " Frame: "+ frameCount);
     				}
     			}
-    			//System.out.println("LURKER att:" + enemy.isAttacking() + " VISIBLE: " + enemy.isVisible() + " TaRGETable:" + enemy.isTargetable());
-    			
+	
     		}
-    		//DUNNO LOL
-    		/*
     		if (enemy.isAttacking() && !enemy.isTargetable()) {
     			Command scan = new Command(CommandType.SCAN);
     			TilePosition tp = enemy.getTilePosition();
     			scan.setTargettilePosition(tp);
     			Request r = new Request(null, scan);
     			requests.put(tp.getX() + "scan" + tp.getY(), r);
-    			System.out.println("SCAN REQUESTED ON" + tp.getX() + tp.getY());
+    			System.out.println("SCAN REQUESTED ON (invisible)" + tp.getX() + tp.getY());
     			
     		}
-    		*/
+    		
     	}
     }
     
