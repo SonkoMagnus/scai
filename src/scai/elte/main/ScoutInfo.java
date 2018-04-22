@@ -7,6 +7,7 @@ public class ScoutInfo {
 	public enum TileType {NORMAL, BASE_LOC, START_LOC}
 	private TilePosition tile;
 	private TileType type;
+	
 	private Integer importance; 
 	private boolean walkable;
 	

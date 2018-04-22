@@ -72,13 +72,11 @@ public class MapUtil {
 		int minHp = Integer.MAX_VALUE;
 		Unit weakest = null;
 		for (Unit u : units) {
-			System.out.println(u.getHitPoints());
 			if (u.getHitPoints() < minHp) {
 				minHp = u.getHitPoints();
 				weakest = u;
 			}
 		}
-		System.out.println("weakest" + weakest);
 		return weakest;
 	}
 	

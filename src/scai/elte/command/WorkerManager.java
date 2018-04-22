@@ -1,9 +1,8 @@
 package scai.elte.command;
 
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 
+import bwapi.Color;
 import bwapi.Order;
 import bwapi.TilePosition;
 import bwapi.Unit;
@@ -57,7 +56,7 @@ public class WorkerManager extends UnitManager {
 						targetUnit = worker.getOrderTarget();
 					}
 					
-					if (targetUnit != null && targetUnit.isCompleted()) { //not gud
+					if (targetUnit != null && targetUnit.isCompleted()) { 
 						System.out.println(targetUnit.getType() + " completed");
 						targetUnit = null;
 						targetTile = null;
@@ -126,21 +125,28 @@ public class WorkerManager extends UnitManager {
     		}
     		
 		} else if (role == WorkerRole.SCOUT) {
+			if (!Main.game.isExplored(Main.naturalExpansion.getTilePosition())) {
+				worker.move(Main.naturalExpansion.getPosition()); //Scout the natural expansion first - hardcoding this might not be the best
+			} else {
+			TilePosition moveTile = null; 
+			Main.game.drawBoxMap(worker.getOrderTargetPosition().getX(), worker.getOrderTargetPosition().getY(), worker.getOrderTargetPosition().getX()+10, worker.getOrderTargetPosition().getY()+10, Color.Yellow, true);
 			if (worker.isBraking() || !worker.isMoving()) {
-
 				int maxImp = Integer.MIN_VALUE;
 				for (ScoutInfo sc : Main.scoutHeatMap) {
 					if (sc.getImportance() > maxImp) {
 						maxImp = sc.getImportance();
+						moveTile = sc.getTile();
 					}
 				}
-				System.out.println("MAXIMP" + maxImp);
-				TilePosition moveTile = null;
+				System.out.println("MAXIMP:" + maxImp);
+				System.out.println(Main.scoutHeatMap.size());
+				
 				double minDist = Integer.MAX_VALUE;
-				int d = 0;
 				for (ScoutInfo sc : Main.scoutHeatMap) {
 					if (sc.isWalkable() && sc.getImportance() == maxImp) {
 						double dist = worker.getDistance(sc.getTile().toPosition());
+						
+						//double dist = BWTA.getGroundDistance(sc.getTile(), worker.getTilePosition());
 						if (dist<minDist) {
 							minDist = dist;
 							moveTile = sc.getTile();
@@ -151,8 +157,10 @@ public class WorkerManager extends UnitManager {
 								
 				//System.out.println("Scouting worker target pos:" + moveTile.toPosition());
 				worker.move(moveTile.toPosition());
+				//worker.move(moveTile.toPosition());
 			
 			}
+		}
 
 		}
 		}

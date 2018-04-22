@@ -12,6 +12,7 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 
+import bwapi.Color;
 import bwapi.DefaultBWListener;
 import bwapi.Game;
 import bwapi.Mirror;
@@ -23,6 +24,7 @@ import bwapi.TilePosition;
 import bwapi.Unit;
 import bwapi.UnitType;
 import bwapi.UpgradeType;
+import bwapi.WalkPosition;
 import bwta.BWTA;
 import bwta.BaseLocation;
 import bwta.Chokepoint;
@@ -122,7 +124,7 @@ public class Main extends DefaultBWListener {
     public HashMap<UnitType, Integer> targetUnitNumbers = new HashMap<UnitType, Integer>(); //Unit goals 
     Random rand;
     BaseLocation home;
-    BaseLocation naturalExpansion;
+    public static BaseLocation naturalExpansion;
     ArrayList<Chokepoint> chokes; 
     MapUtil mapUtil;
     
@@ -313,9 +315,7 @@ public class Main extends DefaultBWListener {
      				si = new ScoutInfo(tp, TileType.NORMAL, 1, game.isWalkable(tp.toWalkPosition()));
      				
      			}
-     			//System.out.println(scoutHeatMap.contains(si));
      			scoutHeatMap.add(si);
-     			//System.out.println(scoutHeatMap.size());
      		}
      	}
      	
@@ -450,7 +450,7 @@ public class Main extends DefaultBWListener {
         
         ageHeatMap();
         
-        if (!scout && unitCounts.get(UnitType.Terran_SCV) >= 6) {
+        if (!scout && unitCounts.get(UnitType.Terran_SCV) >= 10) {
         	Integer rid = unitManagerIDs.get(UnitType.Terran_SCV).get(rand.nextInt(unitManagerIDs.get(UnitType.Terran_SCV).size())); //TODO "get random worker logic rework"
         	Unit worker = unitManagers.get(rid).getUnit();
         	assignWorkerRole(worker, WorkerRole.SCOUT);
@@ -488,19 +488,26 @@ public class Main extends DefaultBWListener {
             		}
             	} else if (self.getUpgradeLevel(upg) >= ((UpgradeItem)bpi).getLevel()) { //already upgraded
             		buildOrder.getImproveOrder().remove(bpi);   
-            	}
-        		
+            	}	
         	}
-        	
         }
         }
         //Verify/debug
-        
-        for (ScoutInfo sc : scoutHeatMap) {
-        	game.drawTextMap(sc.getTile().toPosition(), sc.getImportance().toString());
-        }
         /*
+        for (ScoutInfo sc : scoutHeatMap) {
+        	if (sc.isWalkable())   {  		
+        		game.drawBoxMap(sc.getTile().toPosition().getX(), sc.getTile().toPosition().getY(), 
+        			sc.getTile().toPosition().getX()+10, 
+        			sc.getTile().toPosition().getY()+10, Color.Red, true);
+        	} else {
+        		game.drawBoxMap(sc.getTile().toPosition().getX(), sc.getTile().toPosition().getY(), 
+            			sc.getTile().toPosition().getX()+10, 
+            			sc.getTile().toPosition().getY()+10, Color.Green, true);
+        	}
+        }
+        */
         
+        /*
         
         for (TilePosition c : plannedPositions) {
         	game.drawBox(Enum.Map, c.toPosition().getX(), c.toPosition().getY(), c.toPosition().getX()+16, c.toPosition().getY()+16, Color.Yellow, true);
@@ -596,6 +603,7 @@ public class Main extends DefaultBWListener {
 						// Reserve minerals
 						reservedMinerals = reservedMinerals + buildingType.mineralPrice();
 						reservedGas = reservedGas + buildingType.gasPrice();
+						System.out.println("supply:" + supplyUsedActual + " , type:" + boi.getUnitType() + " to queue");
 						boi.status = BuildOrderItemStatus.IN_QUEUE;
 					}
 				if (boi.status == BuildOrderItemStatus.IN_QUEUE
@@ -653,11 +661,11 @@ public class Main extends DefaultBWListener {
     	//For every unit target, get a producer building, and train unit TODO maybe importance of different units?
     	trainRequiredUnits();
     	requestScanIfNeeded();
-        
+  /*      
     	for (Unit myUnit : self.getUnits()) {
         	game.drawTextMap(myUnit.getPosition().getX(), myUnit.getPosition().getY(), "ID:" + myUnit.getID());
         }
-
+*/
 
         game.drawTextScreen(10, 25, statusMessages.toString());        
         
@@ -672,42 +680,29 @@ public class Main extends DefaultBWListener {
     }
     
     public void ageHeatMap() {
+    	if (frameCount % 20 == 0) { //Speed up, for debug purposes
     	for (ScoutInfo sc : scoutHeatMap) {
     		//scoutHeatMap.remove(sc);
 			int weight = 0;
 			if (game.isVisible(sc.getTile())) {
+		
 				sc.setImportance(0);
 			} else {
 
 				if (sc.getType() == TileType.BASE_LOC) {
 					weight = 2;
-					// sc.setImportance(sc.getImportance()+2);
 				} else if (sc.getType() == TileType.START_LOC) {
 					weight = 3;
-					// sc.setImportance(sc.getImportance()+3);
 				} else if (sc.getType() == TileType.NORMAL) {
-					// sc.setImportance(sc.getImportance()+1);
 					weight = 1;
 				}
 				if (!game.isExplored(sc.getTile())) {
 					weight = weight * 2;
 				}
 				sc.setImportance(sc.getImportance() + weight);
-			}
-    		//scoutHeatMap.add(sc);
-    		
+			}	
     	}
-    	
-    	//Collections.sort(scutHeatMap);
-    	/*
-    	TreeSet<ScoutInfo> scoutHeatMapUpdate = new TreeSet<ScoutInfo>(new ScoutInfoComparator());
-    	 scoutHeatMapUpdate.addAll(scoutHeatMap);
-    	 scoutHeatMap.clear();
-    	// System.out.println("Updat siz:" + scoutHeatMapUpdate.size());
-    	 scoutHeatMap.addAll(scoutHeatMapUpdate);
-    	 */
-    	//scoutHeatMap
-    	//scoutHeatMap.addAll(scoutHeatMapUpdate);
+    	}
     }
     
     public void updateScannedPositions () { 
@@ -877,7 +872,7 @@ public class Main extends DefaultBWListener {
     				}
     			}
     		}
-    		maxDist += 2;
+    		maxDist += 1;
     	}
     	if (ret == null) game.printf("Unable to find suitable build position for "+buildingType.toString());
     	return ret;
