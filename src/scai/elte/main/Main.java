@@ -108,7 +108,7 @@ public class Main extends DefaultBWListener {
      */
     public static BuildOrder buildOrder = new BuildOrder();
     public static HashMap<Integer, UnitManager> unitManagers = new HashMap<Integer, UnitManager>();
-    public static HashMap<Position, Integer> scannerPositions = new HashMap<Position, Integer>();
+    public static ConcurrentHashMap<Position, Integer> scannerPositions = new ConcurrentHashMap<Position, Integer>();
     public static int supplyUsedActual;
     public static Integer availableMinerals;
     public static Integer availableGas;
@@ -120,7 +120,7 @@ public class Main extends DefaultBWListener {
     public static Set<BaseLocation> baseLocations = new HashSet<BaseLocation>();
     public static Set<Region> baseRegions = new HashSet<Region>();
     
-    public HashMap<UnitType, ArrayList<Integer>> unitManagerIDs = new HashMap<UnitType, ArrayList<Integer>>(); //IDs by unit type, for quick access
+    public HashMap<UnitType, HashSet<Integer>> unitManagerIDs = new HashMap<UnitType, HashSet<Integer>>(); //IDs by unit type, for quick access
     public HashMap<UnitType, Integer> targetUnitNumbers = new HashMap<UnitType, Integer>(); //Unit goals 
     Random rand;
     BaseLocation home;
@@ -148,6 +148,7 @@ public class Main extends DefaultBWListener {
         	if (boi.status == BuildOrderItemStatus.BUILD_PROCESS_STARTED) {
         		if (unit.getType() == boi.getUnitType()) {
         			boi.status = BuildOrderItemStatus.UNDER_CONSTRUCTION;
+        			System.out.println("Freeing " + boi.getUnitType().mineralPrice() + " minerals for " + boi.getUnitType());
         			reservedMinerals = reservedMinerals - boi.getUnitType().mineralPrice();
         			reservedGas = reservedGas - boi.getUnitType().gasPrice();
                 	break;
@@ -188,7 +189,7 @@ public class Main extends DefaultBWListener {
     	}  else {
     		unitManagers.putIfAbsent(unit.getID(), new UnitManager(unit));
     	}
-    	unitManagerIDs.putIfAbsent(unit.getType(), new ArrayList<Integer>());
+    	unitManagerIDs.putIfAbsent(unit.getType(), new HashSet<Integer>());
     	unitManagerIDs.get(unit.getType()).add(unit.getID());
     }
 
@@ -235,13 +236,11 @@ public class Main extends DefaultBWListener {
         			reservedGas = reservedGas - - boi.getUnitType().gasPrice();	
         			reservedMineralsInQueue = reservedMineralsInQueue - boi.getUnitType().mineralPrice();
         			reservedMinerals = reservedMinerals - boi.getUnitType().mineralPrice();
+        			System.out.println("Freeing " + boi.getUnitType().mineralPrice() + " minerals for " + boi.getUnitType());
         		}
         	}
-        }
-    	
+        }    	
     }
-    
-
     
 
     public static TreeSet<ScoutInfo> scoutHeatMap;
@@ -342,6 +341,7 @@ public class Main extends DefaultBWListener {
 	@Override
 	public void onUnitDestroy(Unit unit) {
 		if (unit.getPlayer() == self && !unit.getType().isNeutral()) {
+		System.out.println("Destroyed " + unit.getType() + " with id:" + unit.getID() + " remving");
 		unitManagerIDs.get(unit.getType()).remove(Integer.valueOf(unit.getID()));
 		unitManagers.remove(unit.getID());
 		}
@@ -388,12 +388,25 @@ public class Main extends DefaultBWListener {
     
     public Unit getWorkerFromRole(WorkerRole prevRole, WorkerRole role) {
     	//assign random
-    	ArrayList<Integer> randomIds = unitManagerIDs.get(UnitType.Terran_SCV);
+    	System.out.println("DEBUG1:" + unitManagerIDs.get(UnitType.Terran_SCV).size());
+    	HashSet<Integer> randomIds = new HashSet<Integer>(unitManagerIDs.get(UnitType.Terran_SCV));
+    //	System.out.println("Randomids:" + randomIds);
+    	for (Integer i : randomIds) {
+    		WorkerManager wm = (WorkerManager)unitManagers.get(i);
+    		
+    	//	System.out.println("debug wm exists:" + wm);
+    	}
     	while (randomIds.size() > 0) {
     	Integer d = rand.nextInt(randomIds.size());
-    	Integer wmid = randomIds.get(d);
+    	
+    	Integer wmid = null;
+    	for (int i=0; i<d; i++ ) {
+    		wmid = randomIds.iterator().next();
+    	}
     	randomIds.remove(wmid);
    		WorkerManager wm = (WorkerManager)unitManagers.get(wmid);
+   		//System.out.println("WM:" + wm);
+   		System.out.println("DEBUG2:" + unitManagerIDs.get(UnitType.Terran_SCV).size());
    		if (wm.getUnit().isCompleted() && wm.getRole() == prevRole) {
    			wm.setPrevRole(prevRole);
    			wm.setRole(role);
@@ -444,15 +457,30 @@ public class Main extends DefaultBWListener {
         statusMessages.append("Frame count:" + frameCount+ "\n");
         statusMessages.append("Units:" + self.getUnits().size() + " Managers:" + unitManagers.size() + "\n");
         statusMessages.append("Requests:" + requests.size()+ "\n");
-        statusMessages.append("APM:" + game.getAPM());
+        //statusMessages.append("APM:" + game.getAPM());
+        statusMessages.append("SCVs:" + unitCounts.get(UnitType.Terran_SCV));
+        statusMessages.append("unitmanagerids:" + unitManagerIDs.get(UnitType.Terran_SCV).size() + "\n" );
+        int x = 0;
+        for (Integer s : unitManagers.keySet()) {
+        	if (unitManagers.get(s) instanceof WorkerManager) {
+        		x++;
+        	}
+        }
+        statusMessages.append("wms:" + x);
+       
         
         updateScannedPositions();
         
         ageHeatMap();
         
         if (!scout && unitCounts.get(UnitType.Terran_SCV) >= 10) {
-        	Integer rid = unitManagerIDs.get(UnitType.Terran_SCV).get(rand.nextInt(unitManagerIDs.get(UnitType.Terran_SCV).size())); //TODO "get random worker logic rework"
-        	Unit worker = unitManagers.get(rid).getUnit();
+          	int d = rand.nextInt(unitManagerIDs.get(UnitType.Terran_SCV).size());
+        	Integer wmid = null;
+        	for (int i=0; i<=d; i++ ) {
+        		wmid =  unitManagerIDs.get(UnitType.Terran_SCV).iterator().next();
+        	}
+        	//Integer rid = unitManagerIDs.get(UnitType.Terran_SCV).get(rand.nextInt(unitManagerIDs.get(UnitType.Terran_SCV).size())); //TODO "get random worker logic rework"
+        	Unit worker = unitManagers.get(wmid).getUnit();
         	assignWorkerRole(worker, WorkerRole.SCOUT);
         	scout = true;
         }
@@ -562,7 +590,6 @@ public class Main extends DefaultBWListener {
 							&& r.getRequestStatus() == RequestStatus.NEW) {
 						// Random gatherer, closest one would be best //TODO closest unit of type
 						Unit gasWorker = getWorkerFromRole(WorkerRole.MINERAL, WorkerRole.GAS);
-						System.out.println("ROLEGAS:" + ((WorkerManager)unitManagers.get(gasWorker.getID())).getRole());
 						//assignWorker(gasWorker, gasWorkers);
 						r.setAnsweringUnit(gasWorker);
 						r.setRequestStatus(RequestStatus.BEING_ANSWERED);
@@ -603,8 +630,12 @@ public class Main extends DefaultBWListener {
 						// Reserve minerals
 						reservedMinerals = reservedMinerals + buildingType.mineralPrice();
 						reservedGas = reservedGas + buildingType.gasPrice();
-						System.out.println("supply:" + supplyUsedActual + " , type:" + boi.getUnitType() + " to queue");
+						//System.out.println("supply:" + supplyUsedActual + " , type:" + boi.getUnitType() + " to queue");
 						boi.status = BuildOrderItemStatus.IN_QUEUE;
+					}
+					
+					if (boi.status == BuildOrderItemStatus.IN_QUEUE) {
+					//	System.out.println("CAN_MAKE " + buildingType + " " + game.canMake(buildingType));
 					}
 				if (boi.status == BuildOrderItemStatus.IN_QUEUE
 							&& (self.minerals() - reservedMineralsInQueue) >= buildingType.mineralPrice()
@@ -661,11 +692,11 @@ public class Main extends DefaultBWListener {
     	//For every unit target, get a producer building, and train unit TODO maybe importance of different units?
     	trainRequiredUnits();
     	requestScanIfNeeded();
-  /*      
+       
     	for (Unit myUnit : self.getUnits()) {
         	game.drawTextMap(myUnit.getPosition().getX(), myUnit.getPosition().getY(), "ID:" + myUnit.getID());
         }
-*/
+
 
         game.drawTextScreen(10, 25, statusMessages.toString());        
         

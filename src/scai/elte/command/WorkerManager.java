@@ -57,7 +57,6 @@ public class WorkerManager extends UnitManager {
 					}
 					
 					if (targetUnit != null && targetUnit.isCompleted()) { 
-						System.out.println(targetUnit.getType() + " completed");
 						targetUnit = null;
 						targetTile = null;
 						changeRole = true;
@@ -138,8 +137,6 @@ public class WorkerManager extends UnitManager {
 						moveTile = sc.getTile();
 					}
 				}
-				System.out.println("MAXIMP:" + maxImp);
-				System.out.println(Main.scoutHeatMap.size());
 				
 				double minDist = Integer.MAX_VALUE;
 				for (ScoutInfo sc : Main.scoutHeatMap) {

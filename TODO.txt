@@ -4,6 +4,7 @@
 - Improve builder behaviour: Sometimes builder derps out
 	- Ask units to move out of the way?
 	- natural pos: command center not get built
+	- Builder destroyed: free resources
 - Terrain analyze, identify chokes, gating... walling
 	- Naturalchoke identify
 - Militia
