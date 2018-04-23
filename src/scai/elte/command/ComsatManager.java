@@ -41,7 +41,6 @@ public class ComsatManager extends BuildingManager{
 						r.setRequestStatus(RequestStatus.FULFILLED);
 					}
 				}
-
 			}
 		}
 	}

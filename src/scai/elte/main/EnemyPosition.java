@@ -3,31 +3,31 @@ package scai.elte.main;
 import bwapi.Position;
 import bwapi.UnitType;
 
-
-public class EnemyPosition
-{
-	public UnitType type;
-	public Position pos;
+public class EnemyPosition {
 	
-
-	public EnemyPosition(UnitType type, Position pos)
-	{
+	private Position position;
+	private UnitType type;
+	
+	public EnemyPosition(Position position, UnitType type) {
+		this.position = position;
 		this.type = type;
-		this.pos = pos;
+		
 	}
-	
-	@Override
-	public boolean equals(Object other)
-	{
-		if(other.getClass() != this.getClass())
-			return false;
-		return pos.getX() == ((EnemyPosition)other).pos.getX() && pos.getY() == ((EnemyPosition)other).pos.getY();
+
+	public Position getPosition() {
+		return position;
 	}
-	
-	
-	@Override
-	public int hashCode()
-	{
-		return pos.getX() + pos.getY();
+
+	public void setPosition(Position position) {
+		this.position = position;
 	}
+
+	public UnitType getType() {
+		return type;
+	}
+
+	public void setType(UnitType type) {
+		this.type = type;
+	}
+
 }

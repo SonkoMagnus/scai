@@ -99,6 +99,27 @@ public class MapUtil {
 		return positionsInRadius;
 	}
 	
+	//"Cautious" method
+	public static Set<TilePosition> getTilePositionsInRadius (Position point, double radius) {
+		Set<TilePosition> tiles = new HashSet<TilePosition>();
+		
+		int x = point.getX();
+		int y = point.getY();
+		
+		int rt = (int) Math.ceil(radius /32);
+		int xt = x/32;
+		int yt = y/32;
+		
+		for  (int i = xt-rt; i<=xt+rt; i++) {
+			for (int j = yt-rt; j<=yt+rt ; j++) {
+				TilePosition tp = new TilePosition(i, j);
+				tiles.add(tp);
+			}
+		}
+		
+		return tiles;
+	}
+	
 	/*
 	public static Unit getNearestAttackableUnit(Collection<Unit> units, Unit attacker) {
 		int dist = 0;

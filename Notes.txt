@@ -1,2 +1,3 @@
 Notes
 Scanner duration is 262 frames
+drone -> creep -> sunken morph id remains

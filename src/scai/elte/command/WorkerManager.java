@@ -128,7 +128,7 @@ public class WorkerManager extends UnitManager {
 				worker.move(Main.naturalExpansion.getPosition()); //Scout the natural expansion first - hardcoding this might not be the best
 			} else {
 			TilePosition moveTile = null; 
-			Main.game.drawBoxMap(worker.getOrderTargetPosition().getX(), worker.getOrderTargetPosition().getY(), worker.getOrderTargetPosition().getX()+10, worker.getOrderTargetPosition().getY()+10, Color.Yellow, true);
+			//Main.game.drawBoxMap(worker.getOrderTargetPosition().getX(), worker.getOrderTargetPosition().getY(), worker.getOrderTargetPosition().getX()+10, worker.getOrderTargetPosition().getY()+10, Color.Yellow, true);
 			if (worker.isBraking() || !worker.isMoving()) {
 				int maxImp = Integer.MIN_VALUE;
 				for (ScoutInfo sc : Main.scoutHeatMap) {
@@ -140,10 +140,8 @@ public class WorkerManager extends UnitManager {
 				
 				double minDist = Integer.MAX_VALUE;
 				for (ScoutInfo sc : Main.scoutHeatMap) {
-					if (sc.isWalkable() && sc.getImportance() == maxImp) {
+					if (!sc.isThreatenedByGround() && sc.isWalkable() && sc.getImportance() == maxImp) {
 						double dist = worker.getDistance(sc.getTile().toPosition());
-						
-						//double dist = BWTA.getGroundDistance(sc.getTile(), worker.getTilePosition());
 						if (dist<minDist) {
 							minDist = dist;
 							moveTile = sc.getTile();
@@ -152,17 +150,13 @@ public class WorkerManager extends UnitManager {
 					}
 				}
 								
-				//System.out.println("Scouting worker target pos:" + moveTile.toPosition());
 				worker.move(moveTile.toPosition());
-				//worker.move(moveTile.toPosition());
-			
 			}
 		}
 
 		}
 		}
 		if (changeRole) {
-			System.out.println("Current:" + role + " prev:" + prevRole);
 			role = prevRole;
 		}
 

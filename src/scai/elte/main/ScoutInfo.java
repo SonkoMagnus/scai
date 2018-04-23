@@ -10,6 +10,9 @@ public class ScoutInfo {
 	
 	private Integer importance; 
 	private boolean walkable;
+	//Position threatened by (static) enemy units
+	private boolean threatenedByGround = false;
+	private boolean threatenedByAir = false;
 	
 	public ScoutInfo(TilePosition tile, TileType type, Integer importance, boolean walkable) {
 		this.tile = tile;
@@ -56,6 +59,22 @@ public class ScoutInfo {
 
 	public void setTile(TilePosition tile) {
 		this.tile = tile;
+	}
+
+	public boolean isThreatenedByGround() {
+		return threatenedByGround;
+	}
+
+	public void setThreatenedByGround(boolean threatenedByGround) {
+		this.threatenedByGround = threatenedByGround;
+	}
+
+	public boolean isThreatenedByAir() {
+		return threatenedByAir;
+	}
+
+	public void setThreatenedByAir(boolean threatenedByAir) {
+		this.threatenedByAir = threatenedByAir;
 	}
 }
 
