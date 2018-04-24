@@ -1,12 +1,8 @@
 package scai.elte.command;
 
-import java.util.HashSet;
-
 import bwapi.Position;
-import bwapi.TilePosition;
 import bwapi.Unit;
 import bwapi.UnitCommandType;
-import scai.elte.command.Request.RequestType;
 import scai.elte.main.Main;
 
 public class MarineManager extends UnitManager {
@@ -15,9 +11,19 @@ public class MarineManager extends UnitManager {
 		super(unit);
 	}
 
-	//TODO bunker destroyed, free marines
 	@Override
 	public void operate() {
+		Unit marine = getUnit();
+		if (marine.isCompleted()) {
+		Command c = getActualCommand();
+			if (c!= null) {
+				if (c.getType()== CommandType.ATTACK_MOVE && marine.getLastCommand().getUnitCommandType() != UnitCommandType.Attack_Move ) {
+					marine.attack(c.getTargetPosition());
+				}
+			}
+			
+		}
+		/* - Manning bunker logic, disabled for now
 		Unit marine = getUnit();
 		if ( getUnit().isCompleted() ) {
 		if (getUnit().isIdle() && getUnit().getTransport() == null) {
@@ -43,10 +49,6 @@ public class MarineManager extends UnitManager {
 					}
 					if (r.getRequestedCommand().getType() == CommandType.MAN_BUNKER && r.getRequestStatus() == RequestStatus.BEING_ANSWERED 
 							&& r.getAnsweringUnit().getID() == getUnit().getID()) {
-						//System.out.println("ID:" + getUnit().getID() + " Answering bunker request...");
-						//Spam command until fulfilled
-						
-						//System.out.println("ID:" + getUnit().getID()+ " IS_LOADED:" + getUnit().isLoaded());
 						r.getRequestingUnit().load(getUnit());
 					}
 				}
@@ -54,6 +56,7 @@ public class MarineManager extends UnitManager {
 			}		
 		}
 		}
+		*/
 	}
 	
 	
@@ -64,7 +67,7 @@ public class MarineManager extends UnitManager {
 			int dist = 0;
 			int minDist = Integer.MAX_VALUE;
 			Unit nearestEnemy = null;
-			for (Unit enemy : Main.enemyUnits) {
+			for (Unit enemy : Main.enemyUnits.values()) {
 				dist = getUnit().getDistance(enemy);
 				if (dist<minDist) {
 					minDist = dist;

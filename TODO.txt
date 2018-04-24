@@ -1,19 +1,23 @@
-- SCOUTING..
-	- threat areas
-		- enemybuildingmemory: on morph, remove previous
-		- destroyed out of sight? Moved away(liftoff, terran)sti
+	
+- Squads:
+	- Adjust squad numbers after dying
+	- Do not assign bunker-marines to squad - bunker logic offline for the moment
+	- medic: stay back
+- Unit production: importance of training units
+- Defense request expire
 - Improve builder behaviour: Sometimes builder derps out
 	- Ask units to move out of the way?
 	- Builder destroyed: free resources
+- SCOUTING..
+	- pathfinding, avoid enemies
 - Terrain analyze, identify chokes, gating... walling
 	- Naturalchoke identify
 - Militia
 	- 6-pool should be repelled, better fighting logic
 	- Proper deassignment
 - Base/expansion management
-- Squads:
 
 Adaptive strategy
-	- Adjust worker numbers after condition
+	- Adjust worker numbers after condition: 1/3 rule?
 - Neural network: Modifies build order dynamically, alters squad composition, and targeting
 - Unit target numbers: priority to different units?

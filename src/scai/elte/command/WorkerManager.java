@@ -2,13 +2,11 @@ package scai.elte.command;
 
 import java.util.HashSet;
 
-import bwapi.Color;
 import bwapi.Order;
 import bwapi.TilePosition;
 import bwapi.Unit;
 import bwapi.UnitCommandType;
 import bwapi.UnitType;
-import bwta.BWTA;
 import bwta.Region;
 import scai.elte.command.Request.RequestType;
 import scai.elte.main.Main;
@@ -39,7 +37,7 @@ public class WorkerManager extends UnitManager {
 		boolean changeRole = false;
 		Unit worker = getUnit();
 		if (worker.isCompleted()) {
-		if (worker.isUnderAttack()) {
+		if (worker.isUnderAttack() && role != WorkerRole.SCOUT) {
 			Main.requests.putIfAbsent(worker.getID()+"D", new Request(worker, null, RequestType.DEFEND));	 //When to delete?
 		} else {
 			Main.requests.remove(worker.getID() + "D");
@@ -47,7 +45,10 @@ public class WorkerManager extends UnitManager {
 		
 		
 		if (role == WorkerRole.BUILD) {
-
+				if (worker.isIdle()) {
+					System.out.println("Builder id:" + worker.getID() + "Builder target order:" + worker.getOrder() + " builder targetUNit:" + targetUnit + " builder targettile:" + targetTile 
+							+ " is constructing:" + worker.isConstructing() + " buildType:" + buildType);
+				}
 					if ((worker.getOrder() == Order.PlaceBuilding)) {
 						buildType = worker.getBuildType();
 						
@@ -62,9 +63,14 @@ public class WorkerManager extends UnitManager {
 						changeRole = true;
 					}
 					
-					if (!worker.isConstructing() && targetUnit != null) {
-						worker.build(targetUnit.getType(), targetTile);
-					}
+					else if (!worker.isConstructing() ) {
+						System.out.println(worker.canBuild(buildType, targetTile));
+						if (worker.canBuild(buildType, targetTile)) {
+								worker.build(buildType, targetTile); 
+							} else {
+								targetTile = Main.getBuildTile(worker, buildType, targetTile);
+							}
+						}
 					
 		
 		} else if (role == WorkerRole.MINERAL) {
@@ -109,7 +115,7 @@ public class WorkerManager extends UnitManager {
 				//TODO: make this more efficient, low priority
 				Region def = MapUtil.getRegionOfUnit(worker);
 				HashSet<Unit> enemies = new HashSet<Unit>();
-				for (Unit e : Main.enemyUnits) {
+				for (Unit e : Main.enemyUnits.values()) {
 					if (MapUtil.getRegionOfUnit(e) == def) {
 						enemies.add(e);
 					}

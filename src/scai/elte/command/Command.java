@@ -1,9 +1,8 @@
 package scai.elte.command;
 
+import bwapi.Position;
 import bwapi.TilePosition;
 import bwapi.Unit;
-import bwapi.UnitCommand;
-import bwapi.UnitCommandType;
 import bwapi.UnitType;
 
 //General command class, for (fighting) units. Stateless entity, not tracked.
@@ -12,11 +11,9 @@ public class Command {
 
 	private CommandType type;
 	private Unit targetUnit;
-	private UnitType targetUnitType; //For build orders, mostly
-	private TilePosition targettilePosition;
-
-	
-
+	private UnitType targetUnitType;  //For build orders, mostly
+	private TilePosition targettilePosition;  //For build orders, mostly
+	private Position targetPosition; //Attackmove, move
 
 	public Command(CommandType type) {
 		this.type = type;
@@ -63,5 +60,13 @@ public class Command {
 
 	public void setTargettilePosition(TilePosition targettilePosition) {
 		this.targettilePosition = targettilePosition;
+	}
+
+	public Position getTargetPosition() {
+		return targetPosition;
+	}
+
+	public void setTargetPosition(Position targetPosition) {
+		this.targetPosition = targetPosition;
 	}
 }

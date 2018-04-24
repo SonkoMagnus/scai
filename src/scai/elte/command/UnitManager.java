@@ -14,6 +14,7 @@ public class UnitManager {
 	
 	private Unit unit;
 	private boolean gotTask;
+	private Command actualCommand;
 	
 	public UnitManager(Unit unit) {
 		this.unit=unit;
@@ -27,7 +28,6 @@ public class UnitManager {
 	        return null;
 	    }
 	    final Position ownPosition = unit.getPosition();
-	    //TODO add walls
 	    final List<Pair<Double, Double>> vectors = new ArrayList<>();
 
 	    double minDistance = Double.MAX_VALUE;
@@ -75,6 +75,16 @@ public class UnitManager {
 
 	public void setGotTask(boolean gotTask) {
 		this.gotTask = gotTask;
+	}
+
+
+	public Command getActualCommand() {
+		return actualCommand;
+	}
+
+
+	public void setActualCommand(Command actualCommand) {
+		this.actualCommand = actualCommand;
 	}
 
 }

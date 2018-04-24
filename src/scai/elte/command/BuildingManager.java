@@ -44,9 +44,7 @@ public class BuildingManager extends UnitManager {
 			getUnit().buildAddon(addon.first);
 		}
 		
-		if (getUnit().isConstructing()) { //Constructing addon - not good, revise TODO
-			
-			if (!addon.second) System.out.println("building constructing...");
+		if (getUnit().isConstructing()) {
 			addon.second=true;
 		}
 		
