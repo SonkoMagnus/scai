@@ -1,8 +1,8 @@
 	
 - Squads:
-	- Adjust squad numbers after dying
-	- Do not assign bunker-marines to squad - bunker logic offline for the moment
-	- medic: stay back
+	- regroup
+- Marine manager:
+	- Stim
 - Unit production: importance of training units
 - Defense request expire
 - Improve builder behaviour: Sometimes builder derps out

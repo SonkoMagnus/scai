@@ -1,8 +1,10 @@
 package scai.elte.command;
 
 import bwapi.Position;
+import bwapi.TechType;
 import bwapi.Unit;
 import bwapi.UnitCommandType;
+import scai.elte.command.Request.RequestType;
 import scai.elte.main.Main;
 
 public class MarineManager extends UnitManager {
@@ -15,11 +17,23 @@ public class MarineManager extends UnitManager {
 	public void operate() {
 		Unit marine = getUnit();
 		if (marine.isCompleted()) {
+			if (marine.isAttacking() &&  !marine.isStimmed() && marine.canUseTech(TechType.Stim_Packs) ) {
+				marine.useTech(TechType.Stim_Packs);
+			}
+			
 		Command c = getActualCommand();
 			if (c!= null) {
 				if (c.getType()== CommandType.ATTACK_MOVE && marine.getLastCommand().getUnitCommandType() != UnitCommandType.Attack_Move ) {
 					marine.attack(c.getTargetPosition());
 				}
+			} else {
+				//Check defense requests
+				for (Request r : Main.requests.values()) {
+					if (r.getType() == RequestType.DEFEND && marine.getLastCommand().getUnitCommandType() != UnitCommandType.Attack_Move  ) {
+						marine.attack(r.getRequestingUnit().getPosition());
+					}
+				}
+				
 			}
 			
 		}
@@ -58,9 +72,6 @@ public class MarineManager extends UnitManager {
 		}
 		*/
 	}
-	
-	
-	//Work in progress
 	public void kite() {
 		Unit marine = getUnit();
 		if (!Main.enemyUnits.isEmpty()) {
@@ -76,9 +87,7 @@ public class MarineManager extends UnitManager {
 					}
 				}
 			}
-		
 			if (nearestEnemy != null) {
-
 				if ( marine.getGroundWeaponCooldown() > 0) { 
 					Position moveTile = null;
 					double ed;
@@ -89,12 +98,9 @@ public class MarineManager extends UnitManager {
 							int y = marine.getPosition().getY();
 							Position direction = new Position(x+i, y+j);
 							ed = direction.getDistance(nearestEnemy.getPosition().getX() ,nearestEnemy.getPosition().getY());
-						
 							if (ed > maxEd) {
 								maxEd = ed;
-								moveTile= direction;
-					
-								
+								moveTile= direction;	
 							}
 							//reachable?
 						}

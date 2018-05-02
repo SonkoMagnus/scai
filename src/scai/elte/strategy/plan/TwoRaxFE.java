@@ -36,6 +36,13 @@ public class TwoRaxFE extends BuildOrder {
 		getImproveOrder().add(new UpgradeItem(UpgradeType.U_238_Shells, 52, 2, 1));
 		addItem(UnitType.Terran_Comsat_Station, 40, 1);
 		
+		//Test
+		addItem(UnitType.Terran_Engineering_Bay, 40, 1);
+		getImproveOrder().add(new UpgradeItem(UpgradeType.Terran_Infantry_Weapons, 40, 3, 1));
+		getImproveOrder().add(new UpgradeItem(UpgradeType.Terran_Infantry_Armor, 40, 2, 1));
+		addItem(UnitType.Terran_Barracks, 50, 1);
+		addItem(UnitType.Terran_Barracks, 56, 1);
+		
 		this.setSupplyExecuted(56);
 		
 	}

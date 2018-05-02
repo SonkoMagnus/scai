@@ -3,6 +3,7 @@ package scai.elte.command;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import bwapi.Color;
 import bwapi.Position;
 import bwapi.Unit;
 import bwapi.UnitType;
@@ -21,13 +22,18 @@ public class Squad {
 	private Integer orderCooldown = 600; //order expire time, in frames, with arbitrary default value
 	public SquadOrder currentOrder;
 	private Position targetPosition; //Move or attack
+	private Position squadCenter;
+	
+	//For heal/repair
+	private Unit lowestHpOrganic = null;
+	private Unit lowestHpMechanic = null;
 	
 	public Squad() {
 		currentOrder = SquadOrder.IDLE;
 	}
-	//For heal/repair
-	private Unit lowestHpOrganic = null;
-	private Unit lowestHpMechanic = null;
+
+	
+//	private HashSet<Unit> injuredOrganic = new HashSet<Unit>();
 
 	
 	//Squad loop
@@ -43,6 +49,17 @@ public class Squad {
 			actualComposition.put(t, 0);
 		}
 		for (Unit u : members) {
+			
+			//Not really good - TODO marine center for medix
+			if (squadCenter == null) {
+				squadCenter = u.getPosition();
+			} else {
+				int x = ((squadCenter.getX() + u.getPosition().getX())/2);
+				int y = ((squadCenter.getY() + u.getPosition().getY())/2);
+				squadCenter = new Position(x, y);
+			}
+			
+			
 			actualComposition.put(u.getType(), actualComposition.get(u.getType())+1); //Recount the units
 			//Regardless of order, we want to heal/repair	
 			if (u.getType().isOrganic()) {
@@ -63,8 +80,21 @@ public class Squad {
 			}
 			if (currentOrder == SquadOrder.ATTACK_POSITION) {
 				if (u.getType()==UnitType.Terran_Marine) {
-					Command c = new Command(CommandType.ATTACK_MOVE);
-					c.setTargetPosition(targetPosition);
+					Command c;
+					c = new Command(CommandType.ATTACK_MOVE);
+					c.setTargetPosition(targetPosition);	
+					
+					/*
+					 * 		if (u.getPosition().getDistance(squadCenter) > u.getType().groundWeapon().maxRange() * 2) {
+						System.out.println("Squad too spread out, regroup");
+						Main.game.drawCircleMap(nearestToPosition(UnitType.Terran_Marine, targetPosition).getPosition(), 5, Color.Green);
+						c = new Command(CommandType.MOVE);
+						c.setTargetPosition(nearestToPosition(UnitType.Terran_Marine, targetPosition).getPosition());
+					} else {
+						System.out.println("Attacking nearest enemy b");
+					 */
+					
+					
 					if (Main.unitManagers.get(u.getID()) != null) {
 					Main.unitManagers.get(u.getID()).setActualCommand(c);
 					}
@@ -75,10 +105,18 @@ public class Squad {
 					Command c;
 					
 					if (lowestHpOrganic != null) {
-						c = new Command(CommandType.HEAL, lowestHpOrganic);
+						c = new Command(CommandType.HEAL, lowestHpOrganic); 
 					} else {
-						c = new Command(CommandType.ATTACK_MOVE);
-						c.setTargetPosition(targetPosition);
+					
+						Position nearestMarinePos = nearestToPosition(UnitType.Terran_Marine, squadCenter).getPosition();
+						if (nearestMarinePos != null) {
+							c = new Command(CommandType.MOVE);
+							c.setTargetPosition(nearestMarinePos);
+						} else {
+						//c.setTargetPosition(nearestToCenter(UnitType.Terran_Marine).getPosition()); //Need the nearest marine of the 
+							c = new Command(CommandType.ATTACK_MOVE);
+							c.setTargetPosition(targetPosition);
+						}
 						
 					}
 					if (Main.unitManagers.get(u.getID()) != null) {
@@ -100,9 +138,25 @@ public class Squad {
 			lowestHpMechanic = null;
 		}
 		
+		if (squadCenter != null) Main.game.drawCircleMap(squadCenter, 5, Color.Red);
 		
 		
+	}
+	
+	public Unit nearestToPosition(UnitType type, Position pos) {
+		Unit nearest = null;
+		double minDist = Integer.MAX_VALUE;
+		for (Unit m : members) {
+			if (type == null || m.getType() == type) {
+			double c = Math.sqrt(Math.pow(m.getX()-pos.getX(), 2)+Math.pow(m.getY()-pos.getY(), 2));
+			if (c < minDist) {
+				minDist = c;
+				nearest = m;
+			}
+			}
+		}
 		
+		return nearest;
 	}
 	
 	public Squad(HashMap<UnitType, Integer> targetComposition) {
@@ -111,14 +165,8 @@ public class Squad {
 	
 	public void assignMember(Unit unit) {
 		actualComposition.putIfAbsent(unit.getType(), 1);
-		/*
-		if (actualComposition.get(unit.getType()) == null) {
-			actualComposition.put(unit.getType(), 1);
-		} else {
-			actualComposition.put(unit.getType(), actualComposition.get(unit.getType()) +1);
-		}
-		*/
 		members.add(unit);
+		Main.unitManagers.get(unit.getID()).setSquad(this);
 	}
 	
 	public void removeMember(Unit unit) {

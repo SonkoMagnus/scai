@@ -46,8 +46,6 @@ public class WorkerManager extends UnitManager {
 		
 		if (role == WorkerRole.BUILD) {
 				if (worker.isIdle()) {
-					System.out.println("Builder id:" + worker.getID() + "Builder target order:" + worker.getOrder() + " builder targetUNit:" + targetUnit + " builder targettile:" + targetTile 
-							+ " is constructing:" + worker.isConstructing() + " buildType:" + buildType);
 				}
 					if ((worker.getOrder() == Order.PlaceBuilding)) {
 						buildType = worker.getBuildType();
@@ -64,11 +62,12 @@ public class WorkerManager extends UnitManager {
 					}
 					
 					else if (!worker.isConstructing() ) {
-						System.out.println(worker.canBuild(buildType, targetTile));
 						if (worker.canBuild(buildType, targetTile)) {
 								worker.build(buildType, targetTile); 
 							} else {
+								if (Main.availableMinerals >= buildType.mineralPrice() && Main.availableGas >= buildType.gasPrice()) {
 								targetTile = Main.getBuildTile(worker, buildType, targetTile);
+								}
 							}
 						}
 					
@@ -121,10 +120,12 @@ public class WorkerManager extends UnitManager {
 					}
 				}
 				Unit enemy = MapUtil.getWeakestUnit(enemies);
-				if (enemy!= null) {
-				worker.attack(enemy);
+				if (enemy == null) {
+					System.out.println("prevr:" + prevRole);
+					changeRole = true;
+					//setRole(prevRole);
 				} else { 
-					setRole(prevRole);
+					worker.attack(enemy);
 				}
 
     		}
@@ -163,7 +164,9 @@ public class WorkerManager extends UnitManager {
 		}
 		}
 		if (changeRole) {
+			if (role != prevRole) {
 			role = prevRole;
+			}
 		}
 
 	}

@@ -15,6 +15,7 @@ public class UnitManager {
 	private Unit unit;
 	private boolean gotTask;
 	private Command actualCommand;
+	private Squad squad;
 	
 	public UnitManager(Unit unit) {
 		this.unit=unit;
@@ -85,6 +86,16 @@ public class UnitManager {
 
 	public void setActualCommand(Command actualCommand) {
 		this.actualCommand = actualCommand;
+	}
+
+
+	public Squad getSquad() {
+		return squad;
+	}
+
+
+	public void setSquad(Squad squad) {
+		this.squad = squad;
 	}
 
 }
