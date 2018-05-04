@@ -35,7 +35,6 @@ public class MarineManager extends UnitManager {
 				}
 				
 			}
-			
 		}
 		/* - Manning bunker logic, disabled for now
 		Unit marine = getUnit();
@@ -114,6 +113,4 @@ public class MarineManager extends UnitManager {
 			}
 		}
 	}
-		
-
 }
