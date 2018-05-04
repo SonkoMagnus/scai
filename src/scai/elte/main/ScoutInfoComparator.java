@@ -19,5 +19,4 @@ public class ScoutInfoComparator implements Comparator<ScoutInfo> {
 		return 0;
     }
 
-
 }

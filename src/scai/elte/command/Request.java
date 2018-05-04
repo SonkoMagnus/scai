@@ -42,21 +42,17 @@ public class Request {
 		this.requestedCommand = requestedCommand;
 	}
 
-
 	public RequestStatus getRequestStatus() {
 		return requestStatus;
 	}
-
 
 	public void setRequestStatus(RequestStatus requestStatus) {
 		this.requestStatus = requestStatus;
 	}
 
-
 	public Unit getAnsweringUnit() {
 		return answeringUnit;
 	}
-
 
 	public void setAnsweringUnit(Unit answeringUnit) {
 		this.answeringUnit = answeringUnit;
@@ -69,5 +65,4 @@ public class Request {
 	public void setType(RequestType type) {
 		this.type = type;
 	}	
-	
 }

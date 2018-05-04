@@ -23,7 +23,6 @@ public class ScoutInfo {
 	
 	@Override
 	public boolean equals(Object obj) {
-		System.out.println(tile.equals(((ScoutInfo)obj).getTile()));
 		return tile.equals(((ScoutInfo)obj).getTile());
 	}
 	
@@ -41,11 +40,9 @@ public class ScoutInfo {
 		this.walkable = walkable;
 	}
 
-
 	public TileType getType() {
 		return type;
 	}
-
 
 	public void setType(TileType type) {
 		this.type = type;

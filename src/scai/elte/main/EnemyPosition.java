@@ -10,8 +10,7 @@ public class EnemyPosition {
 	
 	public EnemyPosition(Position position, UnitType type) {
 		this.position = position;
-		this.type = type;
-		
+		this.type = type;		
 	}
 
 	public Position getPosition() {

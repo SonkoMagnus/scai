@@ -2,13 +2,6 @@ package scai.elte.strategy;
 
 import java.util.Comparator;
 
-
-/**
- * 
- * @author Sonko
- * Base plan comparator for priority queue
- *
- */
 public class BasePlanItemComparator implements Comparator<BasePlanItem>
 	{
 	    @Override

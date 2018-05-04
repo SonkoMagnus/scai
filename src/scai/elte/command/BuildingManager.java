@@ -46,9 +46,7 @@ public class BuildingManager extends UnitManager {
 		
 		if (getUnit().isConstructing()) {
 			addon.second=true;
-		}
-		
-		
+		}	
 	}
 
 	public void researchFromQueue() {
@@ -81,5 +79,4 @@ public class BuildingManager extends UnitManager {
 	public void setImproveList(PriorityQueue<BasePlanItem> improveList) {
 		this.improveList = improveList;
 	} 
-
 }

@@ -21,9 +21,7 @@ public class UnitManager {
 		this.unit=unit;
 		this.gotTask=false;
 	}
-	
-	
-	//From Yegers
+
 	public Position kiteAway(final Unit unit, final Set<Unit> enemies) {
 	    if (enemies.isEmpty()) {
 	        return null;
@@ -87,7 +85,6 @@ public class UnitManager {
 	public void setActualCommand(Command actualCommand) {
 		this.actualCommand = actualCommand;
 	}
-
 
 	public Squad getSquad() {
 		return squad;

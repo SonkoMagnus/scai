@@ -83,44 +83,26 @@ public class Squad {
 					Command c;
 					c = new Command(CommandType.ATTACK_MOVE);
 					c.setTargetPosition(targetPosition);	
-					
-					/*
-					 * 		if (u.getPosition().getDistance(squadCenter) > u.getType().groundWeapon().maxRange() * 2) {
-						System.out.println("Squad too spread out, regroup");
-						Main.game.drawCircleMap(nearestToPosition(UnitType.Terran_Marine, targetPosition).getPosition(), 5, Color.Green);
-						c = new Command(CommandType.MOVE);
-						c.setTargetPosition(nearestToPosition(UnitType.Terran_Marine, targetPosition).getPosition());
-					} else {
-						System.out.println("Attacking nearest enemy b");
-					 */
-					
-					
 					if (Main.unitManagers.get(u.getID()) != null) {
 					Main.unitManagers.get(u.getID()).setActualCommand(c);
 					}
 				
 				} 
 				else if (u.getType()==UnitType.Terran_Medic) {
-				//	System.out.println("commanding medic");
 					Command c;
-					
 					if (lowestHpOrganic != null) {
 						c = new Command(CommandType.HEAL, lowestHpOrganic); 
 					} else {
-					
 						Position nearestMarinePos = nearestToPosition(UnitType.Terran_Marine, squadCenter).getPosition();
 						if (nearestMarinePos != null) {
 							c = new Command(CommandType.MOVE);
 							c.setTargetPosition(nearestMarinePos);
-						} else {
-						//c.setTargetPosition(nearestToCenter(UnitType.Terran_Marine).getPosition()); //Need the nearest marine of the 
+						} else { 
 							c = new Command(CommandType.ATTACK_MOVE);
 							c.setTargetPosition(targetPosition);
 						}
-						
 					}
 					if (Main.unitManagers.get(u.getID()) != null) {
-					//	System.out.println("commanding medic to " + c.getType());
 					Main.unitManagers.get(u.getID()).setActualCommand(c);
 					}
 				}
@@ -137,10 +119,7 @@ public class Squad {
 		if (lowMechHp == 1000000) {
 			lowestHpMechanic = null;
 		}
-		
 		if (squadCenter != null) Main.game.drawCircleMap(squadCenter, 5, Color.Red);
-		
-		
 	}
 	
 	public Unit nearestToPosition(UnitType type, Position pos) {
@@ -148,14 +127,13 @@ public class Squad {
 		double minDist = Integer.MAX_VALUE;
 		for (Unit m : members) {
 			if (type == null || m.getType() == type) {
-			double c = Math.sqrt(Math.pow(m.getX()-pos.getX(), 2)+Math.pow(m.getY()-pos.getY(), 2));
-			if (c < minDist) {
-				minDist = c;
-				nearest = m;
-			}
+				double c = Math.sqrt(Math.pow(m.getX() - pos.getX(), 2) + Math.pow(m.getY() - pos.getY(), 2));
+				if (c < minDist) {
+					minDist = c;
+					nearest = m;
+				}
 			}
 		}
-		
 		return nearest;
 	}
 	
@@ -170,10 +148,8 @@ public class Squad {
 	}
 	
 	public void removeMember(Unit unit) {
-		//actualComposition.put(unit.getType(), actualComposition.get(unit.getType())-1);
 		members.remove(unit);
 	}
-	
 	
 	//Convenience method, check if squad has all the required units
 	public boolean fullStrength() {
@@ -236,5 +212,4 @@ public class Squad {
 	public void setOrderCooldown(Integer orderCooldown) {
 		this.orderCooldown = orderCooldown;
 	}
-
 }

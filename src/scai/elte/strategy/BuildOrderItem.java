@@ -6,11 +6,8 @@ import bwapi.UnitType;
 public class BuildOrderItem extends BasePlanItem {
 
 	private UnitType unitType;
-	
 	private TilePosition tilePosition;
-
 	public BuildOrderItemStatus status;
-	
 	
 	public BuildOrderItem(UnitType unitType,  Integer supplyThreshold,Integer importance, BuildOrderItemStatus status) {
 		this.unitType=unitType;

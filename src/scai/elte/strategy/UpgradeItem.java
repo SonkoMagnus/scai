@@ -28,8 +28,4 @@ public class UpgradeItem extends BasePlanItem {
 	public void setUpgradeType(UpgradeType upgradeType) {
 		this.upgradeType = upgradeType;
 	}
-	
-	
-	
-
 }

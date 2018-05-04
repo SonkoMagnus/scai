@@ -36,8 +36,4 @@ public class BuildOrder {
 	public void setImproveOrder(CopyOnWriteArrayList<BasePlanItem> improveOrder) {
 		this.improveOrder = improveOrder;
 	}
-
-
-
-
 }
