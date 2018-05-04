@@ -112,9 +112,7 @@ public class WorkerManager extends UnitManager {
 					}
 					Unit enemy = MapUtil.getWeakestUnit(enemies);
 					if (enemy == null) {
-						System.out.println("prevr:" + prevRole);
 						changeRole = true;
-						// setRole(prevRole);
 					} else {
 						worker.attack(enemy);
 					}
@@ -125,10 +123,6 @@ public class WorkerManager extends UnitManager {
 																		// this might not be the best
 				} else {
 					TilePosition moveTile = null;
-					// Main.game.drawBoxMap(worker.getOrderTargetPosition().getX(),
-					// worker.getOrderTargetPosition().getY(),
-					// worker.getOrderTargetPosition().getX()+10,
-					// worker.getOrderTargetPosition().getY()+10, Color.Yellow, true);
 					if (worker.isBraking() || !worker.isMoving()) {
 						int maxImp = Integer.MIN_VALUE;
 						for (ScoutInfo sc : Main.scoutHeatMap) {

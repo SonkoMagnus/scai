@@ -1,6 +1,5 @@
 package scai.elte.command;
 
-import bwapi.Color;
 import bwapi.Unit;
 import scai.elte.main.Main;
 
@@ -18,7 +17,7 @@ public class MedicManager extends UnitManager {
 				if (getActualCommand().getType() == CommandType.HEAL && Main.frameCount % 10 == 0) {
 					medic.attack(getActualCommand().getTargetUnit()); // Healing..
 				} else if (getActualCommand().getType() == CommandType.ATTACK_MOVE) {
-					medic.move(getActualCommand().getTargetPosition());
+					medic.attack(getActualCommand().getTargetPosition());
 				}
 			}
 		}
