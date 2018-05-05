@@ -161,7 +161,6 @@ public class Main extends DefaultBWListener {
 		countAllUnits();
 		for (BuildOrderItem boi : buildOrder.buildOrderList) {
 			if (boi.status == BuildOrderItemStatus.BUILD_PROCESS_STARTED) {
-				// System.out.println("build process started for:" + unit.getType());
 				if (unit.getType() == boi.getUnitType()) {
 					boi.status = BuildOrderItemStatus.UNDER_CONSTRUCTION;
 					reservedMineralsInQueue -= boi.getUnitType().mineralPrice();
@@ -230,7 +229,6 @@ public class Main extends DefaultBWListener {
     @Override
     public void onUnitMorph(Unit unit) {
     	super.onUnitMorph(unit);
-		//System.out.println("Unit " + unit.getType() + " with id: " + unit.getID() + "morphed");
     	if (unit.getPlayer() == self) {
     	assignUnitManager(unit);
         for (BuildOrderItem boi : buildOrder.buildOrderList) {
@@ -239,10 +237,8 @@ public class Main extends DefaultBWListener {
         			boi.status = BuildOrderItemStatus.UNDER_CONSTRUCTION;
         			reservedGasInQueue = reservedGasInQueue - boi.getUnitType().gasPrice();
         			reservedGas = reservedGas - - boi.getUnitType().gasPrice();	
-        			reservedMineralsInQueue = reservedMineralsInQueue - boi.getUnitType().mineralPrice();
-        			
+        			reservedMineralsInQueue = reservedMineralsInQueue - boi.getUnitType().mineralPrice();      			
         			reservedMinerals = reservedMinerals - boi.getUnitType().mineralPrice();
-        			System.out.println("Reserved minerals freed(morph):" + boi.getUnitType().mineralPrice() );
         		}
         	}
         }    	
@@ -533,13 +529,11 @@ public class Main extends DefaultBWListener {
         //The set build order has executed, now improve the build according to the neural network - to avoid spamming, only check every 2000 frames
         if (buildOrder.getSupplyExecuted() < supplyUsedActual && frameCount % 2000 == 0) {
         	if (economyNeuron.getOutput()==1) {
-        		System.out.println("Economy improvement");
         		targetUnitNumbers.get(UnitType.Terran_SCV);
         		targetUnitNumbers.put(UnitType.Terran_SCV, targetUnitNumbers.get(UnitType.Terran_SCV)+1);
         	}
         	
         	if (armyNeuron.getOutput() == 1) {
-        		System.out.println("Army improvement");
         		boolean build = true;
         		for (Squad s : army) {
         			if (!s.fullStrength()) {
@@ -675,9 +669,6 @@ public class Main extends DefaultBWListener {
 						}	
 						mb.build(boi.getUnitType(), boi.getTilePosition()); 							
 						((WorkerManager)unitManagers.get(mb.getID())).setTargetTile(boi.getTilePosition());
-						System.out.println("--------------------------------------------Builder id:"
-								+ mb.getID() + " command is to build " + boi.getUnitType() + "in "
-								+ boi.getTilePosition().getX() + " " + boi.getTilePosition().getY());
 						reservedMineralsInQueue = reservedMineralsInQueue + boi.getUnitType().mineralPrice();	
 						reservedGasInQueue += boi.getUnitType().gasPrice();
 						boi.status = BuildOrderItemStatus.BUILD_PROCESS_STARTED;
@@ -893,9 +884,7 @@ public class Main extends DefaultBWListener {
     			TilePosition tp = enemy.getTilePosition();
     			scan.setTargettilePosition(tp);
     			Request r = new Request(null, scan);
-    			requests.put(tp.getX() + "scan" + tp.getY(), r);
-    			//System.out.println("SCAN REQUESTED ON (invisible)" + tp.getX() + tp.getY());  //Untested as of yet    		
-    			
+    			requests.put(tp.getX() + "scan" + tp.getY(), r);				
     		}
     		
     	}

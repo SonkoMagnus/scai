@@ -54,11 +54,9 @@ public class BuildingManager extends UnitManager {
 		if (bpi != null) {
 			if (bpi instanceof TechItem) {
 				 getUnit().research(((TechItem) bpi).getTechType());
-				 System.out.println("Researching:" + ((TechItem) bpi).getTechType());
 			} 
 			if (bpi instanceof UpgradeItem) {
 				getUnit().upgrade(((UpgradeItem) bpi).getUpgradeType());
-				System.out.println("Upgrading:" +((UpgradeItem) bpi).getUpgradeType());
 			} 
 		}
 	}

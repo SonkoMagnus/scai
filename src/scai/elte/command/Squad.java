@@ -32,10 +32,6 @@ public class Squad {
 		currentOrder = SquadOrder.IDLE;
 	}
 
-	
-//	private HashSet<Unit> injuredOrganic = new HashSet<Unit>();
-
-	
 	//Squad loop
 	public void executeSquadOrder() {
 		//System.out.println("Squad executing order..");

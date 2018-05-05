@@ -21,7 +21,6 @@ public class BunkerManager extends BuildingManager {
 				String id = getUnit().getID() + "_" + i;
 				Request req = new Request(getUnit(), c);
 				if (!Main.requests.containsKey(id)) {
-			//		System.out.println("Bunkermanager issuing man bunker request with id:" + id);
 					Main.requests.putIfAbsent(id, req);
 				};
 		
