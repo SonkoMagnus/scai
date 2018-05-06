@@ -2,7 +2,7 @@ package scai.elte.strategy;
 
 public class BasePlanItem {
 	
-	private Integer importance; //the higher, the more important is the item
+	private Integer importance; 
 	private Integer supplyThreshold;
 	private Integer executorId;
 	

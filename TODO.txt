@@ -1,4 +1,0 @@
-Adaptive strategy
-	- Income and spending statistics
-	- Adjust worker numbers after condition: 1/3 rule?
-- Neural network: Modifies build order dynamically, alters squad composition, and targeting

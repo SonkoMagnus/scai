@@ -13,13 +13,11 @@ import scai.elte.main.Util;
 public class UnitManager {
 	
 	private Unit unit;
-	private boolean gotTask;
 	private Command actualCommand;
 	private Squad squad;
 	
 	public UnitManager(Unit unit) {
 		this.unit=unit;
-		this.gotTask=false;
 	}
 
 	public Position kiteAway(final Unit unit, final Set<Unit> enemies) {
@@ -67,15 +65,6 @@ public class UnitManager {
 	public void setUnit(Unit unit) {
 		this.unit = unit;
 	}
-
-	public boolean isGotTask() {
-		return gotTask;
-	}
-
-	public void setGotTask(boolean gotTask) {
-		this.gotTask = gotTask;
-	}
-
 
 	public Command getActualCommand() {
 		return actualCommand;

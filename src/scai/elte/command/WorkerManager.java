@@ -7,6 +7,7 @@ import bwapi.TilePosition;
 import bwapi.Unit;
 import bwapi.UnitCommandType;
 import bwapi.UnitType;
+import bwta.BWTA;
 import bwta.Region;
 import scai.elte.command.Request.RequestType;
 import scai.elte.main.Main;
@@ -16,7 +17,7 @@ import scai.elte.main.ScoutInfo;
 public class WorkerManager extends UnitManager {
 
 	public enum WorkerRole {
-		MINERAL, GAS, BUILD, SCV, MILITIA, SCOUT
+		MINERAL, GAS, BUILD, MILITIA, SCOUT
 	}
 
 	private WorkerRole role;

@@ -11,11 +11,8 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.neuroph.core.Connection;
-import org.neuroph.core.NeuralNetwork;
 import org.neuroph.core.Neuron;
 import org.neuroph.core.input.InputFunction;
-import org.neuroph.core.transfer.TransferFunction;
-import org.neuroph.nnet.Perceptron;
 import org.neuroph.nnet.comp.neuron.InputNeuron;
 
 import bwapi.Color;
@@ -33,7 +30,6 @@ import bwapi.UpgradeType;
 import bwapi.WeaponType;
 import bwta.BWTA;
 import bwta.BaseLocation;
-import bwta.Chokepoint;
 import bwta.Region;
 import scai.elte.command.BuildingManager;
 import scai.elte.command.BunkerManager;
@@ -87,10 +83,6 @@ public class Main extends DefaultBWListener {
      * Set of all known enemy buildings.
      */
     public HashMap<Integer, EnemyPosition> enemyBuildingMemory = new HashMap<Integer, EnemyPosition>();
-    /**
-     * Current number of workers, starting with 4
-     */
-    public Integer workerCount = 0;
     
     /**
      * Frames passed
@@ -127,23 +119,22 @@ public class Main extends DefaultBWListener {
     private Random rand;
     private BaseLocation home;
     public static BaseLocation naturalExpansion;
-    MapUtil mapUtil;
     
-	Set<TilePosition> threatGround = new HashSet<TilePosition>();
-	Set<TilePosition> threatAir = new HashSet<TilePosition>();
+	private Set<TilePosition> threatGround = new HashSet<TilePosition>();
+	private Set<TilePosition> threatAir = new HashSet<TilePosition>();
 	
     public static TreeSet<ScoutInfo> scoutHeatMap;
     
     //The first two squads to be built
-    Squad BioSquad = new Squad();
-    Squad BioSquad2 = new Squad();
+    private Squad BioSquad = new Squad();
+    private Squad BioSquad2 = new Squad();
     public ArrayList<Squad> army = new ArrayList<Squad>();
     
     //Parts of the neural network
-	InputNeuron incomeNeuron = new InputNeuron();
-	InputNeuron spendingNeuron  = new InputNeuron();
-	Neuron economyNeuron = new Neuron();
-	Neuron armyNeuron = new Neuron();
+    private InputNeuron incomeNeuron = new InputNeuron();
+    private InputNeuron spendingNeuron  = new InputNeuron();
+    private Neuron economyNeuron = new Neuron();
+    private Neuron armyNeuron = new Neuron();
     
 	@Override
 	public void onUnitCreate(Unit unit) {
@@ -172,7 +163,6 @@ public class Main extends DefaultBWListener {
 			}
 		}
 	}
- 
     
     public void assignUnitManager(Unit unit) {
     	if (unit.getType() == UnitType.Terran_Bunker) {
@@ -198,7 +188,6 @@ public class Main extends DefaultBWListener {
     	unitCounts = new HashMap<UnitType, Integer>();
         unitsInProduction = new HashMap<UnitType, Integer>();
         supplyUsedActual = 0;
-    	workerCount =0;
             for (Unit myUnit : self.getUnits()) 
 	        {
             	supplyUsedActual += myUnit.getType().supplyRequired();
@@ -207,9 +196,6 @@ public class Main extends DefaultBWListener {
 	        	else
 	        		unitCounts.put(myUnit.getType(), unitCounts.get(myUnit.getType())+1);
 	        	
-	        	if(myUnit.getType() == UnitType.Terran_SCV) {
-	        		workerCount++;
-	        	}
 	        	if (myUnit.getType().isBuilding()) {
 	        		List<UnitType> trimList = myUnit.getTrainingQueue();
 	        		if (trimList.size() > 0 ) {
@@ -315,15 +301,13 @@ public class Main extends DefaultBWListener {
         buildOrder = new TwoRaxFE(naturalExpansion.getTilePosition());
 
         targetUnitNumbers.putIfAbsent(UnitType.Terran_Marine, 26);
-        targetUnitNumbers.putIfAbsent(UnitType.Terran_SCV, 36);
+        targetUnitNumbers.putIfAbsent(UnitType.Terran_SCV, 24);
         targetUnitNumbers.putIfAbsent(UnitType.Terran_Medic, 6);       
         BioSquad2.getTargetComposition().put(UnitType.Terran_Marine, 20);
         BioSquad.getTargetComposition().put(UnitType.Terran_Marine, 16);
         BioSquad.getTargetComposition().put(UnitType.Terran_Medic, 6);
         army.add(BioSquad);
         army.add(BioSquad2);
-        
-        
         setupNeuralNetwork();
     	}
     	catch (Exception ex) {
@@ -353,6 +337,7 @@ public class Main extends DefaultBWListener {
     
     @Override
     public void onUnitComplete(Unit unit) {
+    	
     	if (frameCount > 10) {
     		countAllUnits();
     	}
@@ -457,47 +442,6 @@ public class Main extends DefaultBWListener {
     		updateThreatMap();
     	}
     }
-
-
-    public void setupNeuralNetwork() {
-        economyNeuron.addInputConnection(incomeNeuron,1);
-        economyNeuron.addInputConnection(spendingNeuron,1);
-        economyNeuron.setInputFunction(new InputFunction() {	
-			private static final long serialVersionUID = 6739309684907310952L;
-
-			@Override
-			public double getOutput(Connection[] cns) {
-				double sum = 0;
-				for (Connection c : cns) {
-					sum += c.getWeightedInput();
-				}
-				if (sum<=0) {
-					return 1; //Balance negative, improve economy
-				} else {
-					return 0; //Balance positive, nothing to do
-				}
-			}
-		});    
-        armyNeuron.addInputConnection(incomeNeuron,1);
-        armyNeuron.addInputConnection(spendingNeuron,1.2); 
-        armyNeuron.setInputFunction(new InputFunction() {
-			private static final long serialVersionUID = 2936270777689108667L;
-
-			@Override
-			public double getOutput(Connection[] cns) {
-			
-				double sum = 0;
-				for (Connection c : cns) {
-					sum += c.getWeightedInput();
-				}
-				if (sum<=0) {
-					return 0; //Balance negative, do nothing
-				} else {
-					return 1; //Balance positive, improve the army
-				}
-			}
-		});
-    }
     
     @Override
     public void onFrame() {
@@ -566,7 +510,6 @@ public class Main extends DefaultBWListener {
     	for (Integer i : unitManagers.keySet()) {
     		unitManagers.get(i).operate();
     	}
-    	    	
     	//For every unit target, get a producer building, and train unit TODO maybe importance of different units?
     	trainRequiredUnits();
     	requestScanIfNeeded();
@@ -574,8 +517,6 @@ public class Main extends DefaultBWListener {
         manageArmy();	
     	fillSquadsWithUnassigned();
         game.drawTextScreen(10, 25, statusMessages.toString());        
-
-
     	} catch (Exception e) {
     		e.printStackTrace();
     	}
@@ -584,6 +525,46 @@ public class Main extends DefaultBWListener {
 
     public static void main(String[] args) {
         new Main().run();
+    }
+    
+    public void setupNeuralNetwork() {
+        economyNeuron.addInputConnection(incomeNeuron,1);
+        economyNeuron.addInputConnection(spendingNeuron,1);
+        economyNeuron.setInputFunction(new InputFunction() {	
+			private static final long serialVersionUID = 6739309684907310952L;
+
+			@Override
+			public double getOutput(Connection[] cns) {
+				double sum = 0;
+				for (Connection c : cns) {
+					sum += c.getWeightedInput();
+				}
+				if (sum<=0) {
+					return 1; //Balance negative, improve economy
+				} else {
+					return 0; //Balance positive, nothing to do
+				}
+			}
+		});    
+        armyNeuron.addInputConnection(incomeNeuron,1);
+        armyNeuron.addInputConnection(spendingNeuron,1.2); 
+        armyNeuron.setInputFunction(new InputFunction() {
+			private static final long serialVersionUID = 2936270777689108667L;
+
+			@Override
+			public double getOutput(Connection[] cns) {
+			
+				double sum = 0;
+				for (Connection c : cns) {
+					sum += c.getWeightedInput();
+				}
+				if (sum<=0) {
+					return 0; //Balance negative, do nothing
+				} else {
+					return 1; //Balance positive, improve the army
+				}
+			}
+		});
     }
     
     public void manageRequests() {
@@ -629,7 +610,7 @@ public class Main extends DefaultBWListener {
     }
     
     public void manageBuildQueue() {
-    	if (workerCount > 1) {
+    	if (unitCounts.get(UnitType.Terran_SCV) > 1) {
 			for (BuildOrderItem boi : buildOrder.buildOrderList) {
 				UnitType buildingType = boi.getUnitType();
 				if (boi.getSupplyThreshold() <= supplyUsedActual && boi.status == BuildOrderItemStatus.PLANNED) {
@@ -862,8 +843,7 @@ public class Main extends DefaultBWListener {
     	}
     }
     
-    public void requestScanIfNeeded() {
-    	
+    public void requestScanIfNeeded() {	
     	for (Unit enemy : enemyUnits.values()) {
     		if (enemy.getType() == UnitType.Zerg_Lurker) {
     			if (enemy.isAttacking() && enemy.isBurrowed()) {
@@ -926,8 +906,7 @@ public class Main extends DefaultBWListener {
 			}
 		}
 		return null;
-	}
-    
+	} 
     
     public static TilePosition getBuildTile(Unit builder, UnitType buildingType, TilePosition aroundTile) {
     	TilePosition ret = null;
@@ -943,9 +922,7 @@ public class Main extends DefaultBWListener {
     					) return n.getTilePosition();
     		}
     	}
-
     	while ((maxDist < stopDist) && (ret == null)) {
-
     		for (int i=aroundTile.getX()-maxDist; i<=aroundTile.getX()+maxDist; i++) {
     			for (int j=aroundTile.getY()-maxDist; j<=aroundTile.getY()+maxDist; j++) {
     				TilePosition targetTile = new TilePosition(i,j);
@@ -970,8 +947,7 @@ public class Main extends DefaultBWListener {
         					    	TilePosition occupied = new TilePosition(i+tw, j+th);
         					    	if (!plannedPositions.contains(occupied)) plannedPositions.add(occupied);
         					    }
-    					    }
-    						
+    					    }			
     						return ret;
     					}
     					// creep for Zerg
