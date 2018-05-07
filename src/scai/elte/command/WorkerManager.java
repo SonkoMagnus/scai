@@ -37,6 +37,7 @@ public class WorkerManager extends UnitManager {
 
 	@Override
 	public void operate() {
+		try {
 		boolean changeRole = false;
 		Unit worker = getUnit();
 		if (worker.isCompleted()) {
@@ -47,6 +48,7 @@ public class WorkerManager extends UnitManager {
 			}
 
 			if (role == WorkerRole.BUILD) {
+				
 				if (worker.isIdle()) {
 				}
 				if ((worker.getOrder() == Order.PlaceBuilding)) {
@@ -59,16 +61,21 @@ public class WorkerManager extends UnitManager {
 					targetUnit = null;
 					targetTile = null;
 					changeRole = true;
+				
 				} else if (!worker.isConstructing()) {
-					if (worker.canBuild(buildType, targetTile)) {
+					/*
+					if (targetTile != null && worker.canBuild(buildType, targetTile)) {
 						worker.build(buildType, targetTile);
 					} else {
 						if (Main.availableMinerals >= buildType.mineralPrice()
 								&& Main.availableGas >= buildType.gasPrice()) {
+							System.out.println("checking build tile - WM");
 							targetTile = Main.getBuildTile(worker, buildType, targetTile);
 						}
 					}
+					*/
 				}
+				
 			} else if (role == WorkerRole.MINERAL) {
 				if (worker.isIdle()) {
 					Unit closestMineral = null;
@@ -103,8 +110,10 @@ public class WorkerManager extends UnitManager {
 					}
 				}
 			} else if (role == WorkerRole.MILITIA) {
+				
 				if (worker.getLastCommand().getUnitCommandType() != UnitCommandType.Attack_Move) {
 					Region def = MapUtil.getRegionOfUnit(worker);
+					if (def == null) System.out.println("null region!");
 					HashSet<Unit> enemies = new HashSet<Unit>();
 					for (Unit e : Main.enemyUnits.values()) {
 						if (MapUtil.getRegionOfUnit(e) == def) {
@@ -115,7 +124,9 @@ public class WorkerManager extends UnitManager {
 					if (enemy == null) {
 						changeRole = true;
 					} else {
+						if (enemy.exists()) {
 						worker.attack(enemy);
+						}
 					}
 				}
 			} else if (role == WorkerRole.SCOUT) {
@@ -152,7 +163,10 @@ public class WorkerManager extends UnitManager {
 				role = prevRole;
 			}
 		}
-
+		} catch ( Throwable e) {
+			e.printStackTrace();
+			//System.out.println(e.printStackTrace(););
+		}
 	}
 
 	public WorkerRole getRole() {

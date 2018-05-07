@@ -65,7 +65,7 @@ public class Main extends DefaultBWListener {
 
     public void run() {
         mirror.getModule().setEventListener(this);
-        mirror.startGame(true);
+        mirror.startGame(false);
     }
     /**
      * The amount of minerals currently reserved for buildings.
@@ -228,7 +228,7 @@ public class Main extends DefaultBWListener {
         		}
         	}
         }    	
-    	} else if (!unit.getType().isNeutral()) {
+    	} else if (!unit.getType().isNeutral() && ! unit.getType().isSpecialBuilding()) {
     		if (unit.getType().isBuilding()) {
     			enemyBuildingMemory.put((Integer)unit.getID(), new EnemyPosition(unit.getPosition(), unit.getType()));
     			updateThreatMap();
@@ -258,12 +258,14 @@ public class Main extends DefaultBWListener {
         }
 
         double minDist = Double.MAX_VALUE;
+        
         for (BaseLocation bl : baseLocations) {
         	if (!bl.equals(home) && bl.getGroundDistance(home) < minDist) {
         		minDist = home.getGroundDistance(bl);
         		naturalExpansion = bl;
         	}
         }  
+        System.out.println(baseLocations);
         
      	scoutHeatMap = new  TreeSet<ScoutInfo>(new ScoutInfoComparator());
      	//Build heatmap for exploration
@@ -313,6 +315,11 @@ public class Main extends DefaultBWListener {
     	catch (Exception ex) {
     		ex.printStackTrace();
     	}
+    }
+    @Override
+    public void onEnd(boolean b) {
+    	//super.onEnd(b);
+    	System.out.println("That's all folks, frames: " + frameCount);
     }
 
 	@Override
@@ -610,7 +617,7 @@ public class Main extends DefaultBWListener {
     }
     
     public void manageBuildQueue() {
-    	if (unitCounts.get(UnitType.Terran_SCV) > 1) {
+    	if (unitCounts.getOrDefault(UnitType.Terran_SCV, 0) > 1) {
 			for (BuildOrderItem boi : buildOrder.buildOrderList) {
 				UnitType buildingType = boi.getUnitType();
 				if (boi.getSupplyThreshold() <= supplyUsedActual && boi.status == BuildOrderItemStatus.PLANNED) {
@@ -639,7 +646,7 @@ public class Main extends DefaultBWListener {
 						TilePosition buildTile = null;
 						if (boi.getTilePosition() == null) {
 								aroundTile = self.getStartLocation();
-								buildTile = getBuildTile(mb, buildingType, aroundTile);									
+								buildTile = getBuildTile(mb, buildingType, aroundTile);			
 							boi.setTilePosition(buildTile);
 						} else {
 							if (!game.canBuildHere(boi.getTilePosition(), boi.getUnitType())) {
@@ -859,7 +866,8 @@ public class Main extends DefaultBWListener {
     			}
 	
     		}
-    		if (enemy.isAttacking() && !enemy.isTargetable()) {
+    		if (enemy.isAttacking() && (!enemy.isTargetable() || enemy.getType().hasPermanentCloak())) {
+    			
     			Command scan = new Command(CommandType.SCAN);
     			TilePosition tp = enemy.getTilePosition();
     			scan.setTargettilePosition(tp);
@@ -912,7 +920,11 @@ public class Main extends DefaultBWListener {
     	TilePosition ret = null;
     	int maxDist = 3;
     	int stopDist = 40;
-
+    	
+    	if (aroundTile == null) {
+    		aroundTile = self.getStartLocation();
+    	}
+    	
     	// Refinery, Assimilator, Extractor
     	if (buildingType.isRefinery()) {
     		for (Unit n : game.neutral().getUnits()) {
