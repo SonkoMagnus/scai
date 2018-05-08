@@ -228,7 +228,8 @@ public class Main extends DefaultBWListener {
         		}
         	}
         }    	
-    	} else if (!unit.getType().isNeutral() && ! unit.getType().isSpecialBuilding()) {
+    	} else if (!unit.getType().isNeutral() && !unit.getType().isSpecialBuilding()) {
+    		System.out.println("type:" + unit.getType() + "self:" + (unit.getPlayer() == self));
     		if (unit.getType().isBuilding()) {
     			enemyBuildingMemory.put((Integer)unit.getID(), new EnemyPosition(unit.getPosition(), unit.getType()));
     			updateThreatMap();
@@ -238,6 +239,8 @@ public class Main extends DefaultBWListener {
     
     @Override
     public void onStart() {
+    	System.out.println(UnitType.Special_Protoss_Temple.isSpecialBuilding());
+    	System.out.println(UnitType.Special_Protoss_Temple.isNeutral());
     	try {
     	rand = new Random();
         game = mirror.getGame();
@@ -265,7 +268,7 @@ public class Main extends DefaultBWListener {
         		naturalExpansion = bl;
         	}
         }  
-        System.out.println(baseLocations);
+        System.out.println("natural:" + naturalExpansion);
         
      	scoutHeatMap = new  TreeSet<ScoutInfo>(new ScoutInfoComparator());
      	//Build heatmap for exploration
@@ -444,7 +447,7 @@ public class Main extends DefaultBWListener {
     	if (unit.getType() == UnitType.Spell_Scanner_Sweep && unit.getPlayer() == self) {
     		scannerPositions.put(unit.getPosition(), 262);
     	}
-    	if (unit.getPlayer() != self && !unit.getType().isNeutral() && unit.getType().isBuilding()) {
+    	if (unit.getPlayer() != self && !unit.getType().isNeutral() && !unit.getType().isSpecialBuilding() && unit.getType().isBuilding()) {
     		enemyBuildingMemory.put(unit.getID(), new EnemyPosition(unit.getPosition(), unit.getType()));
     		updateThreatMap();
     	}
